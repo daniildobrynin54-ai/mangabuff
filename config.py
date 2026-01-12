@@ -1,0 +1,10 @@
+BASE_URL = "https://mangabuff.ru"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0"
+
+# Константы из content.js для оптимизированного парсинга
+OWNERS_PER_PAGE = 36
+WANTS_PER_PAGE = 60
+OWNERS_APPROXIMATE_THRESHOLD = 11
+WANTS_APPROXIMATE_THRESHOLD = 5
+OWNERS_LAST_PAGE_ESTIMATE = 18
+WANTS_LAST_PAGE_ESTIMATE = 30
