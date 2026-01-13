@@ -1,12 +1,15 @@
-"""Модуль для отправки уведомлений в Telegram."""
+"""Модуль для отправки уведомлений в Telegram с защитой от дублирования."""
 
+import os
+import json
 import requests
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from config import OUTPUT_DIR, SENT_CARDS_FILE
 
 
 class TelegramNotifier:
-    """Отправщик уведомлений в Telegram."""
+    """Отправщик уведомлений в Telegram с защитой от дублей."""
     
     def __init__(
         self,
@@ -19,9 +22,9 @@ class TelegramNotifier:
         Инициализация Telegram бота.
         
         Args:
-            bot_token: Токен бота (от @BotFather)
-            chat_id: ID чата/группы (может быть отрицательным для групп)
-            thread_id: ID темы в группе (опционально, для топиков)
+            bot_token: Токен бота
+            chat_id: ID чата/группы
+            thread_id: ID темы (опционально)
             enabled: Включен ли бот
         """
         self.bot_token = bot_token
@@ -29,6 +32,68 @@ class TelegramNotifier:
         self.thread_id = thread_id
         self.enabled = enabled and bool(bot_token) and bool(chat_id)
         self.api_url = f"https://api.telegram.org/bot{bot_token}" if bot_token else None
+        self.sent_cards_file = os.path.join(OUTPUT_DIR, SENT_CARDS_FILE)
+        self._sent_cards = self._load_sent_cards()
+    
+    def _load_sent_cards(self) -> Dict[int, Dict[str, Any]]:
+        """
+        🔧 НОВОЕ: Загружает историю отправленных карт.
+        
+        Returns:
+            Словарь {card_id: {timestamp, name, ...}}
+        """
+        try:
+            if os.path.exists(self.sent_cards_file):
+                with open(self.sent_cards_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"⚠️  Ошибка загрузки истории отправленных карт: {e}")
+        
+        return {}
+    
+    def _save_sent_cards(self) -> None:
+        """🔧 НОВОЕ: Сохраняет историю отправленных карт."""
+        try:
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            with open(self.sent_cards_file, 'w', encoding='utf-8') as f:
+                json.dump(self._sent_cards, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"⚠️  Ошибка сохранения истории: {e}")
+    
+    def _is_card_already_sent(self, card_id: int) -> bool:
+        """
+        🔧 НОВОЕ: Проверяет, была ли уже отправлена эта карта.
+        
+        Args:
+            card_id: ID карты
+        
+        Returns:
+            True если карта уже отправлялась сегодня
+        """
+        card_id_str = str(card_id)
+        
+        if card_id_str not in self._sent_cards:
+            return False
+        
+        # Проверяем дату отправки
+        sent_info = self._sent_cards[card_id_str]
+        sent_date = sent_info.get('date', '')
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Если карта отправлена сегодня - это дубль
+        return sent_date == today
+    
+    def _mark_card_as_sent(self, card_id: int, card_name: str) -> None:
+        """🔧 НОВОЕ: Отмечает карту как отправленную."""
+        card_id_str = str(card_id)
+        
+        self._sent_cards[card_id_str] = {
+            'name': card_name,
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        self._save_sent_cards()
     
     def is_enabled(self) -> bool:
         """Проверяет, включен ли бот."""
@@ -40,17 +105,7 @@ class TelegramNotifier:
         parse_mode: str = "HTML",
         disable_web_page_preview: bool = False
     ) -> bool:
-        """
-        Отправляет текстовое сообщение.
-        
-        Args:
-            text: Текст сообщения (поддерживает HTML или Markdown)
-            parse_mode: Режим форматирования ("HTML" или "Markdown")
-            disable_web_page_preview: Отключить превью ссылок
-        
-        Returns:
-            True если успешно
-        """
+        """Отправляет текстовое сообщение."""
         if not self.enabled:
             return False
         
@@ -64,7 +119,6 @@ class TelegramNotifier:
                 "disable_web_page_preview": disable_web_page_preview
             }
             
-            # Добавляем thread_id если указан (для топиков)
             if self.thread_id:
                 data["message_thread_id"] = self.thread_id
             
@@ -87,17 +141,7 @@ class TelegramNotifier:
         caption: str = "",
         parse_mode: str = "HTML"
     ) -> bool:
-        """
-        Отправляет фото с подписью.
-        
-        Args:
-            photo_url: URL изображения
-            caption: Подпись к фото
-            parse_mode: Режим форматирования
-        
-        Returns:
-            True если успешно
-        """
+        """Отправляет фото с подписью."""
         if not self.enabled:
             return False
         
@@ -134,7 +178,7 @@ class TelegramNotifier:
         club_members: List[Dict[str, str]]
     ) -> bool:
         """
-        Отправляет уведомление о смене карты в клубе.
+        🔧 ИСПРАВЛЕНО: Отправляет уведомление с проверкой на дубли.
         
         Args:
             card_info: Информация о карте
@@ -147,9 +191,15 @@ class TelegramNotifier:
         if not self.enabled:
             return False
         
-        # Формируем текст сообщения
+        card_id = card_info.get('card_id')
         card_name = card_info.get('name', 'Неизвестно')
-        card_id = card_info.get('card_id', '?')
+        
+        # 🔧 ПРОВЕРКА: Была ли уже отправлена эта карта сегодня
+        if self._is_card_already_sent(card_id):
+            print(f"ℹ️  Карта {card_name} (ID: {card_id}) уже отправлялась в Telegram сегодня")
+            return False
+        
+        # Формируем текст сообщения
         rank = card_info.get('rank', '?')
         owners = card_info.get('owners_count', '?')
         wanters = card_info.get('wanters_count', '?')
@@ -166,8 +216,8 @@ class TelegramNotifier:
         
         # Формируем сообщение в HTML формате
         message = (
-            f"<b>Карта сменилась</b>\n"
-            f"{current_time}\n"
+            f"<b>🎴 Карта сменилась</b>\n"
+            f"🕐 {current_time}\n"
             f"<a href='{boost_url}'>{boost_url}</a>\n"
             f"\n"
             f"📝 <b>{card_name}</b>\n"
@@ -179,27 +229,30 @@ class TelegramNotifier:
         # Получаем URL изображения карты
         card_image_url = card_info.get('image_url')
         
-        # Если есть изображение - отправляем с фото, иначе просто текст
+        # Отправляем
+        success = False
         if card_image_url:
-            return self.send_photo(
+            success = self.send_photo(
                 photo_url=card_image_url,
                 caption=message,
                 parse_mode="HTML"
             )
         else:
-            return self.send_message(
+            success = self.send_message(
                 text=message,
                 parse_mode="HTML",
                 disable_web_page_preview=False
             )
+        
+        # 🔧 ОТМЕЧАЕМ: Карта отправлена
+        if success:
+            self._mark_card_as_sent(card_id, card_name)
+            print(f"✅ Уведомление отправлено: {card_name} (ID: {card_id})")
+        
+        return success
     
     def test_connection(self) -> bool:
-        """
-        Тестирует подключение к Telegram.
-        
-        Returns:
-            True если бот работает
-        """
+        """Тестирует подключение к Telegram."""
         if not self.enabled:
             print("⚠️  Telegram bot disabled")
             return False
@@ -230,18 +283,7 @@ def create_telegram_notifier(
     thread_id: Optional[int] = None,
     enabled: bool = True
 ) -> TelegramNotifier:
-    """
-    Фабричная функция для создания Telegram notifier.
-    
-    Args:
-        bot_token: Токен бота
-        chat_id: ID чата
-        thread_id: ID темы (опционально)
-        enabled: Включен ли бот
-    
-    Returns:
-        TelegramNotifier
-    """
+    """Фабричная функция для создания Telegram notifier."""
     notifier = TelegramNotifier(bot_token, chat_id, thread_id, enabled)
     
     if notifier.is_enabled():

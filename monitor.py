@@ -1,4 +1,4 @@
-"""Мониторинг страницы буста клуба с Telegram уведомлениями."""
+"""Мониторинг страницы буста клуба с проверкой лимитов перед вкладом."""
 
 import os
 import threading
@@ -21,7 +21,7 @@ from utils import save_json, load_json, print_section, print_success, print_warn
 
 
 class BoostMonitor:
-    """Монитор страницы буста клуба."""
+    """Монитор страницы буста клуба с контролем лимитов."""
     
     def __init__(
         self,
@@ -29,7 +29,7 @@ class BoostMonitor:
         club_url: str,
         stats_manager: DailyStatsManager,
         output_dir: str = OUTPUT_DIR,
-        telegram_notifier=None  # 🆕 НОВОЕ: Telegram бот
+        telegram_notifier=None
     ):
         """
         Инициализация монитора.
@@ -45,13 +45,12 @@ class BoostMonitor:
         self.club_url = club_url
         self.output_dir = output_dir
         self.stats_manager = stats_manager
-        self.telegram_notifier = telegram_notifier  # 🆕 НОВОЕ
+        self.telegram_notifier = telegram_notifier
         self.running = False
         self.thread = None
         self.boost_available = False
         self.card_changed = False
         self.current_card_id = None
-        # Создаем TradeManager для отмены обменов
         self.trade_manager = TradeManager(session, debug=False)
     
     def check_boost_available(self) -> Optional[str]:
@@ -73,14 +72,12 @@ class BoostMonitor:
             if not boost_button:
                 return None
             
-            # Извлекаем URL
             href = boost_button.get('href')
             if href:
                 if not href.startswith('http'):
                     return f"{BASE_URL}{href}"
                 return href
             
-            # Если href нет - возвращаем текущую страницу
             return self.club_url
             
         except requests.RequestException as e:
@@ -95,7 +92,6 @@ class BoostMonitor:
             Новый card_id если карта изменилась, иначе None
         """
         try:
-            # Загружаем информацию о текущей карте
             current_card_info = get_boost_card_info(self.session, self.club_url)
             
             if not current_card_info:
@@ -103,7 +99,6 @@ class BoostMonitor:
             
             new_card_id = current_card_info.get('card_id')
             
-            # Если карта изменилась
             if new_card_id and self.current_card_id and new_card_id != self.current_card_id:
                 return new_card_id
             
@@ -115,12 +110,10 @@ class BoostMonitor:
     
     def _find_boost_button(self, soup: BeautifulSoup):
         """Находит кнопку буста на странице."""
-        # Вариант 1: по классу
         boost_button = soup.select_one('.club_boost-btn, .club-boost-btn')
         if boost_button:
             return boost_button
         
-        # Вариант 2: по тексту
         for tag in ['button', 'a']:
             boost_button = soup.find(
                 tag,
@@ -129,7 +122,6 @@ class BoostMonitor:
             if boost_button:
                 return boost_button
         
-        # Вариант 3: поиск по содержимому
         for elem in soup.find_all(['a', 'button']):
             text = elem.get_text(strip=True)
             if 'Пожертвовать' in text or 'пожертвовать' in text:
@@ -139,7 +131,7 @@ class BoostMonitor:
     
     def contribute_card(self, boost_url: str) -> bool:
         """
-        Вносит карту в клуб.
+        🔧 ИСПРАВЛЕНО: Вносит карту в клуб с проверкой лимита ПЕРЕД отправкой.
         
         Args:
             boost_url: URL страницы буста
@@ -147,7 +139,7 @@ class BoostMonitor:
         Returns:
             True если успешно
         """
-        # Обновляем и проверяем лимит пожертвований с сервера
+        # 🔧 КРИТИЧНО: Проверяем лимит ПЕРЕД любыми действиями
         if not self.stats_manager.can_donate(force_refresh=True):
             print_warning(f"⛔ Достигнут дневной лимит пожертвований!")
             self.stats_manager.print_stats()
@@ -171,6 +163,11 @@ class BoostMonitor:
             # Выводим информацию о карте которую вносим
             self._print_card_info(current_boost_card, instance_id, is_new=False)
             
+            # 🔧 ЕЩЕ РАЗ проверяем лимит перед отправкой
+            if not self.stats_manager.can_donate(force_refresh=True):
+                print_warning(f"⛔ Лимит достигнут перед отправкой!")
+                return False
+            
             # Отправляем запрос на внесение
             success = self._send_contribute_request(boost_url, instance_id)
             
@@ -184,14 +181,14 @@ class BoostMonitor:
             self.stats_manager.refresh_stats()
             self.stats_manager.print_stats()
             
-            # Отменяем все обмены (с очисткой состояния)
+            # Отменяем все обмены
             self._cancel_pending_trades()
             
             # Делаем паузу чтобы сервер обновил данные
             print("\n⏳ Ожидание обновления данных на сервере (2 сек)...")
             time.sleep(2)
             
-            # ВАЖНО: Загружаем информацию о НОВОЙ карте
+            # Загружаем информацию о НОВОЙ карте
             print("🔄 Загружаем информацию о новой карте...")
             new_boost_card = get_boost_card_info(self.session, boost_url)
             
@@ -211,7 +208,7 @@ class BoostMonitor:
                 # Выводим информацию о новой карте
                 self._print_card_info(new_boost_card, new_instance_id, is_new=True)
                 
-                # 🆕 НОВОЕ: Отправляем уведомление в Telegram
+                # Отправляем уведомление в Telegram
                 self._send_telegram_notification(new_boost_card)
                 
                 # Сохраняем НОВУЮ карту
@@ -236,22 +233,14 @@ class BoostMonitor:
             return False
     
     def handle_card_change_without_boost(self, new_card_id: int) -> bool:
-        """
-        Обрабатывает изменение карты в клубе без буста.
-        
-        Args:
-            new_card_id: ID новой карты
-        
-        Returns:
-            True если успешно
-        """
+        """Обрабатывает изменение карты в клубе без буста."""
         try:
             timestamp = time.strftime('%H:%M:%S')
             print(f"\n🔄 [{timestamp}] КАРТА В КЛУБЕ ИЗМЕНИЛАСЬ!")
             print(f"   Старая карта ID: {self.current_card_id}")
             print(f"   Новая карта ID: {new_card_id}\n")
             
-            # Отменяем все обмены (с очисткой состояния)
+            # Отменяем все обмены
             self._cancel_pending_trades()
             
             # Ждем обновления данных
@@ -271,7 +260,7 @@ class BoostMonitor:
             # Выводим информацию
             self._print_card_info(new_boost_card, new_instance_id, is_new=True)
             
-            # 🆕 НОВОЕ: Отправляем уведомление в Telegram
+            # Отправляем уведомление в Telegram
             self._send_telegram_notification(new_boost_card)
             
             # Сохраняем новую карту
@@ -290,12 +279,7 @@ class BoostMonitor:
             return False
     
     def _send_telegram_notification(self, boost_card: dict) -> None:
-        """
-        🆕 НОВОЕ: Отправляет уведомление в Telegram о смене карты.
-        
-        Args:
-            boost_card: Информация о новой карте
-        """
+        """Отправляет уведомление в Telegram о смене карты."""
         if not self.telegram_notifier or not self.telegram_notifier.is_enabled():
             return
         
@@ -322,9 +306,7 @@ class BoostMonitor:
         save_json(filepath, boost_card)
     
     def _print_card_info(self, boost_card: dict, instance_id: int, is_new: bool = False) -> None:
-        """
-        Выводит информацию о карте с участниками клуба.
-        """
+        """Выводит информацию о карте с участниками клуба."""
         if is_new:
             print_section("🎁 НОВАЯ КАРТА ДЛЯ ВКЛАДА!")
         else:
@@ -340,7 +322,6 @@ class BoostMonitor:
         print(f"   ID карты: {card_id} | Instance ID: {instance_id} | Ранг: {rank}")
         print(f"   Владельцев: {owners} | Желающих: {wanters}")
         
-        # Выводим информацию об участниках клуба
         club_members = boost_card.get('club_members', [])
         members_info = format_club_members_info(club_members)
         print(f"   {members_info}")
@@ -385,7 +366,6 @@ class BoostMonitor:
         """Отменяет все отправленные обмены."""
         print("🔄 Отменяем все отправленные обмены...")
         
-        # Используем trade_manager для отмены (он автоматически очистит состояние)
         success = cancel_all_sent_trades(self.session, self.trade_manager, debug=False)
         
         if success:
@@ -399,7 +379,6 @@ class BoostMonitor:
         print(f"   Проверка каждые {MONITOR_CHECK_INTERVAL} секунд...")
         print("   Отслеживание: буст + смена карты в клубе")
         
-        # 🆕 НОВОЕ: Информация о Telegram
         if self.telegram_notifier and self.telegram_notifier.is_enabled():
             print("   📱 Telegram уведомления: ВКЛЮЧЕНЫ")
         else:
@@ -407,7 +386,7 @@ class BoostMonitor:
         
         print("   Нажмите Ctrl+C для остановки\n")
         
-        # Выводим статистику при старте (обновляем с сервера)
+        # Выводим статистику при старте
         self.stats_manager.print_stats(force_refresh=True)
         
         check_count = 0
@@ -419,7 +398,6 @@ class BoostMonitor:
             new_card_id = self.check_card_changed()
             if new_card_id:
                 self.handle_card_change_without_boost(new_card_id)
-                # Продолжаем мониторинг
                 time.sleep(MONITOR_CHECK_INTERVAL)
                 continue
             
@@ -430,14 +408,18 @@ class BoostMonitor:
                 timestamp = time.strftime('%H:%M:%S')
                 print(f"\n🎯 [{timestamp}] Проверка #{check_count}: БУСТ ДОСТУПЕН!")
                 
-                # Вносим карту
-                success = self.contribute_card(boost_url)
-                
-                if success:
-                    self.boost_available = True
-                    print("   ✅ Продолжаем мониторинг для следующего буста...")
+                # 🔧 ВАЖНО: Проверяем лимит перед вкладом
+                if self.stats_manager.can_donate(force_refresh=True):
+                    success = self.contribute_card(boost_url)
+                    
+                    if success:
+                        self.boost_available = True
+                        print("   ✅ Продолжаем мониторинг для следующего буста...")
+                    else:
+                        print("   ⚠️  Продолжаем мониторинг...")
                 else:
-                    print("   ⚠️  Продолжаем мониторинг...")
+                    print(f"⛔ Буст доступен, но достигнут лимит пожертвований!")
+                    self.stats_manager.print_stats()
             else:
                 # Выводим статус периодически
                 if check_count == 1 or check_count % MONITOR_STATUS_INTERVAL == 0:
@@ -480,27 +462,15 @@ def start_boost_monitor(
     club_url: str,
     stats_manager: DailyStatsManager,
     output_dir: str = OUTPUT_DIR,
-    telegram_notifier=None  # 🆕 НОВОЕ
+    telegram_notifier=None
 ) -> BoostMonitor:
-    """
-    Удобная функция для запуска мониторинга.
-    
-    Args:
-        session: Сессия requests
-        club_url: URL страницы клуба
-        stats_manager: Менеджер статистики
-        output_dir: Директория для файлов
-        telegram_notifier: TelegramNotifier для уведомлений
-    
-    Returns:
-        Объект BoostMonitor
-    """
+    """Удобная функция для запуска мониторинга."""
     monitor = BoostMonitor(
         session,
         club_url,
         stats_manager,
         output_dir,
-        telegram_notifier  # 🆕 НОВОЕ
+        telegram_notifier
     )
     monitor.start()
     return monitor

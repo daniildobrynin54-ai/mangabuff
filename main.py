@@ -1,4 +1,4 @@
-"""Главный модуль с поддержкой прокси и rate limiting."""
+"""Главный модуль с режимом ожидания при достижении лимитов."""
 
 import argparse
 import sys
@@ -11,6 +11,9 @@ from config import (
     BOOST_CARD_FILE,
     WAIT_AFTER_ALL_OWNERS,
     WAIT_CHECK_INTERVAL,
+    WAIT_MODE_CHECK_INTERVAL,
+    WAIT_MODE_STATS_INTERVAL,
+    HISTORY_CHECK_INTERVAL,
     TELEGRAM_ENABLED,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
@@ -31,7 +34,7 @@ from card_replacement import check_and_replace_if_needed
 from daily_stats import create_stats_manager
 from proxy_manager import create_proxy_manager
 from rate_limiter import get_rate_limiter
-from telegram_notifier import create_telegram_notifier  # 🔧 ДОБАВЛЕНО
+from telegram_notifier import create_telegram_notifier
 from utils import (
     ensure_dir_exists,
     save_json,
@@ -46,7 +49,7 @@ from utils import (
 
 
 class MangaBuffApp:
-    """Главное приложение с прокси и rate limiting."""
+    """Главное приложение с режимом ожидания."""
     
     def __init__(self, args: argparse.Namespace):
         self.args = args
@@ -59,7 +62,7 @@ class MangaBuffApp:
         self.processor = None
         self.proxy_manager = None
         self.rate_limiter = get_rate_limiter()
-        self.telegram_notifier = None  # 🔧 ДОБАВЛЕНО
+        self.telegram_notifier = None
     
     def setup(self) -> bool:
         """Настройка приложения."""
@@ -71,7 +74,7 @@ class MangaBuffApp:
             proxy_file=self.args.proxy_file
         )
         
-        # 🔧 ДОБАВЛЕНО: Инициализируем Telegram бота
+        # Инициализируем Telegram бота
         self.telegram_notifier = create_telegram_notifier(
             bot_token=self.args.telegram_token or TELEGRAM_BOT_TOKEN,
             chat_id=self.args.telegram_chat_id or TELEGRAM_CHAT_ID,
@@ -79,7 +82,6 @@ class MangaBuffApp:
             enabled=self.args.telegram_enabled if hasattr(self.args, 'telegram_enabled') else TELEGRAM_ENABLED
         )
         
-        # Выводим информацию о rate limiting
         print(f"⏱️  Rate Limiting: {self.rate_limiter.max_requests} req/min")
         
         print("\n🔐 Вход в аккаунт...")
@@ -111,7 +113,7 @@ class MangaBuffApp:
         return True
     
     def init_history_monitor(self) -> bool:
-        """Инициализирует монитор истории обменов."""
+        """🔧 ИСПРАВЛЕНО: Инициализирует монитор истории с интервалом 1 минута."""
         print("📊 Инициализация монитора истории обменов...")
         
         self.history_monitor = TradeHistoryMonitor(
@@ -121,9 +123,10 @@ class MangaBuffApp:
             debug=self.args.debug
         )
         
-        self.history_monitor.start(check_interval=10)
+        # 🔧 ИЗМЕНЕНО: Интервал проверки 60 секунд вместо 10
+        self.history_monitor.start(check_interval=HISTORY_CHECK_INTERVAL)
         
-        print_success("Монитор истории запущен\n")
+        print_success(f"Монитор истории запущен (проверка каждые {HISTORY_CHECK_INTERVAL}с)\n")
         return True
     
     def init_processor(self) -> None:
@@ -166,7 +169,7 @@ class MangaBuffApp:
         print_success("Карточка для вклада:")
         print(f"   {format_card_info(boost_card)}")
         
-        # 🔧 ДОБАВЛЕНО: Отправляем уведомление о первой карте
+        # Отправляем уведомление о первой карте
         if self.telegram_notifier and self.telegram_notifier.is_enabled():
             print("\n📱 Отправка уведомления о текущей карте в Telegram...")
             club_members = boost_card.get('club_members', [])
@@ -203,13 +206,12 @@ class MangaBuffApp:
         if not self.args.enable_monitor:
             return
         
-        # 🔧 ИСПРАВЛЕНО: Передаем telegram_notifier в монитор
         self.monitor = start_boost_monitor(
             self.session,
             self.args.boost_url,
             self.stats_manager,
             self.output_dir,
-            self.telegram_notifier  # 🔧 ДОБАВЛЕНО
+            self.telegram_notifier
         )
         
         self.monitor.current_card_id = boost_card['card_id']
@@ -251,32 +253,93 @@ class MangaBuffApp:
         print(f"\n⏱️  ТАЙМАУТ: {timeout // 60} минут")
         return False
     
+    def enter_wait_mode(self) -> None:
+        """
+        🔧 НОВОЕ: Режим ожидания при достижении лимитов.
+        
+        В этом режиме:
+        - Мониторинг карты для вклада продолжает работать
+        - Telegram бот активен
+        - Парсинг истории обменов раз в минуту
+        - Проверка сброса лимитов каждые 30 секунд
+        """
+        print_section("⏸️  РЕЖИМ ОЖИДАНИЯ", char="=")
+        print("   📊 Достигнуты дневные лимиты")
+        print("   🔄 Мониторинг карты: АКТИВЕН")
+        print("   📱 Telegram уведомления: АКТИВНЫ")
+        print(f"   📜 История обменов: проверка каждые {HISTORY_CHECK_INTERVAL}с")
+        print(f"   ⏰ Проверка сброса лимитов: каждые {WAIT_MODE_CHECK_INTERVAL}с")
+        print("   Нажмите Ctrl+C для завершения\n")
+        
+        self.stats_manager.print_stats(force_refresh=True)
+        
+        check_count = 0
+        last_stats_time = time.time()
+        
+        while True:
+            check_count += 1
+            
+            # Проверяем сброс лимитов
+            if not self.stats_manager.is_limits_reached(force_refresh=True):
+                print_success("\n✅ Лимиты обновились! Возобновляем работу...")
+                self.stats_manager.print_stats()
+                return
+            
+            # Периодически выводим статистику
+            current_time = time.time()
+            if current_time - last_stats_time >= WAIT_MODE_STATS_INTERVAL:
+                print_section("📊 РЕЖИМ ОЖИДАНИЯ - Статистика", char="-")
+                self.stats_manager.print_stats()
+                last_stats_time = current_time
+            
+            # Проверяем изменение карты
+            if self.monitor and self.monitor.card_changed:
+                print_info("ℹ️  Карта в клубе изменилась (режим ожидания)")
+                # Сбрасываем флаг, но продолжаем ждать
+                self.monitor.card_changed = False
+            
+            time.sleep(WAIT_MODE_CHECK_INTERVAL)
+    
     def run_processing_mode(self, boost_card: dict):
-        """Режим обработки владельцев."""
+        """Режим обработки владельцев с проверкой лимитов."""
         self.init_processor()
         
         while True:
+            # 🔧 ПРОВЕРКА: Достигнуты ли лимиты?
+            if self.stats_manager.is_limits_reached(force_refresh=True):
+                print_warning("\n⛔ Достигнуты все дневные лимиты!")
+                self.enter_wait_mode()
+                # После выхода из режима ожидания продолжаем
+                continue
+            
             current_boost_card = self._load_current_boost_card(boost_card)
             current_card_id = current_boost_card['card_id']
             
+            # Проверка на автозамену
             if current_boost_card.get('needs_replacement', False):
-                print_warning(f"\n⚠️  Карта требует автозамены!")
-                
-                new_card = check_and_replace_if_needed(
-                    self.session,
-                    self.args.boost_url,
-                    current_boost_card,
-                    self.stats_manager
-                )
-                
-                if new_card:
-                    current_boost_card = new_card
-                    current_card_id = new_card['card_id']
+                # 🔧 ПРОВЕРКА: Можем ли делать замену?
+                if not self.stats_manager.can_replace(force_refresh=True):
+                    print_warning(f"\n⚠️  Карта требует замены, но лимит замен исчерпан!")
+                    self.stats_manager.print_stats()
+                    # Продолжаем работать с текущей картой
+                else:
+                    print_warning(f"\n⚠️  Карта требует автозамены!")
                     
-                    if self.monitor:
-                        self.monitor.current_card_id = current_card_id
+                    new_card = check_and_replace_if_needed(
+                        self.session,
+                        self.args.boost_url,
+                        current_boost_card,
+                        self.stats_manager
+                    )
                     
-                    self.processor.reset_state()
+                    if new_card:
+                        current_boost_card = new_card
+                        current_card_id = new_card['card_id']
+                        
+                        if self.monitor:
+                            self.monitor.current_card_id = current_card_id
+                        
+                        self.processor.reset_state()
             
             if self.monitor:
                 self.monitor.card_changed = False
@@ -286,6 +349,12 @@ class MangaBuffApp:
             # Выводим текущий rate
             current_rate = self.rate_limiter.get_current_rate()
             print(f"📊 Текущий rate: {current_rate}/{self.rate_limiter.max_requests} req/min\n")
+            
+            # 🔧 ЕЩЕ РАЗ проверяем лимит перед обработкой
+            if not self.stats_manager.can_donate(force_refresh=True):
+                print_warning("⛔ Лимит вкладов достигнут!")
+                self.enter_wait_mode()
+                continue
             
             # Обрабатываем владельцев
             total = process_owners_page_by_page(
@@ -409,7 +478,7 @@ class MangaBuffApp:
 def create_argument_parser() -> argparse.ArgumentParser:
     """Создает парсер аргументов."""
     parser = argparse.ArgumentParser(
-        description="MangaBuff с прокси и rate limiting"
+        description="MangaBuff с режимом ожидания при достижении лимитов"
     )
     
     # Основные параметры
@@ -421,37 +490,37 @@ def create_argument_parser() -> argparse.ArgumentParser:
     # Прокси
     parser.add_argument(
         "--proxy",
-        help="URL прокси (http://host:port или socks5://user:pass@host:port)"
+        help="URL прокси"
     )
     parser.add_argument(
         "--proxy_file",
-        help="Файл с прокси (первая строка)"
+        help="Файл с прокси"
     )
     
-    # 🔧 ДОБАВЛЕНО: Параметры Telegram
+    # Telegram
     parser.add_argument(
         "--telegram_token",
-        help="Telegram Bot Token (по умолчанию из config.py)"
+        help="Telegram Bot Token"
     )
     parser.add_argument(
         "--telegram_chat_id",
-        help="Telegram Chat ID (по умолчанию из config.py)"
+        help="Telegram Chat ID"
     )
     parser.add_argument(
         "--telegram_thread_id",
         type=int,
-        help="Telegram Thread ID для топиков (опционально)"
+        help="Telegram Thread ID"
     )
     parser.add_argument(
         "--telegram_enabled",
         action="store_true",
         default=None,
-        help="Включить Telegram уведомления"
+        help="Включить Telegram"
     )
     parser.add_argument(
         "--telegram_disabled",
         action="store_true",
-        help="Отключить Telegram уведомления"
+        help="Отключить Telegram"
     )
     
     # Режимы работы
@@ -489,11 +558,9 @@ def main():
     parser = create_argument_parser()
     args = parser.parse_args()
     
-    # Можно задать прокси через переменную окружения
     if not args.proxy and not args.proxy_file:
         args.proxy = os.getenv('PROXY_URL')
     
-    # 🔧 ДОБАВЛЕНО: Обработка флагов Telegram
     if args.telegram_disabled:
         args.telegram_enabled = False
     elif args.telegram_enabled is None:
