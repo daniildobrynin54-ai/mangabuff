@@ -1,4 +1,4 @@
-"""Модуль для работы с обменами с исправленным поиском карт."""
+"""Модуль для работы с обменами с кэшированием отправленных карт."""
 
 import json
 import time
@@ -200,12 +200,15 @@ class TradeHistoryMonitor:
 
 
 class TradeManager:
-    """Менеджер обменов с исправленным поиском карт."""
+    """Менеджер обменов с кэшированием отправленных карт."""
     
     def __init__(self, session, debug: bool = False):
         self.session = session
         self.debug = debug
+        # Отслеживание пар (owner_id, his_card_id)
         self.sent_trades: Set[tuple[int, int]] = set()
+        # ✅ Отслеживание отправленных своих карт (instance_id)
+        self.locked_my_cards: Set[int] = set()
         self.limiter = get_rate_limiter()
     
     def _log(self, message: str) -> None:
@@ -268,22 +271,7 @@ class TradeManager:
         partner_id: int,
         card_id: int
     ) -> Optional[int]:
-        """
-        🔧 ИСПРАВЛЕНО: Поиск instance_id с правильным offset.
-        
-        offset работает так:
-        - 0: карты 1-9999
-        - 10000: карты 10000-19999
-        - 20000: карты 20000-29999
-        и т.д.
-        
-        Args:
-            partner_id: ID партнера
-            card_id: ID карточки
-        
-        Returns:
-            Instance ID или None
-        """
+        """Поиск instance_id карты партнера."""
         self._log(f"🔍 Поиск instance_id карты {card_id} у владельца {partner_id}...")
         
         try:
@@ -300,14 +288,11 @@ class TradeManager:
             if csrf_token:
                 headers["X-CSRF-TOKEN"] = csrf_token
             
-            # ИСПРАВЛЕНИЕ: Используем правильный offset на основе CARDS_PER_BATCH
-            # Для поиска карты определяем в каком батче она находится
             offset = 0
-            max_batches = 100  # Защита от бесконечного цикла (до 1млн карт)
+            max_batches = 100
             batch_count = 0
             
             while batch_count < max_batches:
-                # Ждем если нужно и записываем запрос
                 self.limiter.wait_and_record()
                 
                 self._log(f"  Проверка батча offset={offset}")
@@ -319,7 +304,6 @@ class TradeManager:
                     timeout=REQUEST_TIMEOUT
                 )
                 
-                # Обработка 429
                 if response.status_code == 429:
                     self._log("⚠️  Rate limit 429")
                     self.limiter.pause_for_429()
@@ -336,7 +320,6 @@ class TradeManager:
                     self._log(f"  Батч пуст, карта не найдена")
                     break
                 
-                # Ищем карту в текущем батче
                 for card in cards:
                     c_card_id = card.get("card_id")
                     
@@ -349,12 +332,10 @@ class TradeManager:
                             self._log(f"✅ Найден instance_id={instance_id}")
                             return int(instance_id)
                 
-                # Если в батче было меньше CARDS_PER_BATCH карт - это последний батч
-                if len(cards) < 60:  # API обычно возвращает по 60 карт
+                if len(cards) < 60:
                     self._log(f"  Последний батч, карта не найдена")
                     break
                 
-                # Переходим к следующему батчу
                 offset += CARDS_PER_BATCH
                 batch_count += 1
                 
@@ -389,7 +370,6 @@ class TradeManager:
         self._log(f"  his_instance_id: {his_instance_id}")
         
         try:
-            # Применяем rate limiting
             self.limiter.wait_and_record()
             
             response = self.session.post(
@@ -402,7 +382,6 @@ class TradeManager:
             
             self._log(f"Response status: {response.status_code}")
             
-            # Обработка 429
             if response.status_code == 429:
                 self._log("⚠️  Rate limit (429)")
                 self.limiter.pause_for_429()
@@ -423,8 +402,29 @@ class TradeManager:
             self._log(f"❌ Ошибка сети: {e}")
             return False
     
+    def is_my_card_locked(self, my_instance_id: int) -> bool:
+        """Проверяет, заблокирована ли своя карта."""
+        return my_instance_id in self.locked_my_cards
+    
+    def lock_my_card(self, my_instance_id: int) -> None:
+        """Блокирует свою карту (отправлена в обмен)."""
+        self.locked_my_cards.add(my_instance_id)
+        self._log(f"🔒 Карта заблокирована: instance_id={my_instance_id}")
+    
+    def unlock_all_my_cards(self) -> None:
+        """Разблокирует все свои карты (после отмены обменов)."""
+        count = len(self.locked_my_cards)
+        self.locked_my_cards.clear()
+        self._log(f"🔓 Разблокировано карт: {count}")
+        if count > 0:
+            print(f"🔓 Разблокировано {count} карт(ы) для повторной отправки")
+    
+    def get_locked_cards_count(self) -> int:
+        """Возвращает количество заблокированных карт."""
+        return len(self.locked_my_cards)
+    
     def has_trade_sent(self, receiver_id: int, card_id: int) -> bool:
-        """Проверяет, был ли отправлен обмен."""
+        """Проверяет, был ли отправлен обмен этому владельцу."""
         return (receiver_id, card_id) in self.sent_trades
     
     def mark_trade_sent(self, receiver_id: int, card_id: int) -> None:
@@ -433,10 +433,10 @@ class TradeManager:
         self._log(f"Обмен помечен: owner={receiver_id}, card_id={card_id}")
     
     def clear_sent_trades(self) -> None:
-        """Очищает список отправленных обменов."""
+        """Очищает список отправленных обменов (пары владелец-карта)."""
         count = len(self.sent_trades)
         self.sent_trades.clear()
-        self._log(f"Список очищен ({count} записей)")
+        self._log(f"Список обменов очищен ({count} записей)")
     
     def cancel_all_sent_trades(
         self,
@@ -464,13 +464,17 @@ class TradeManager:
             
             if response.status_code == 200:
                 self.clear_sent_trades()
+                self.unlock_all_my_cards()
+                
                 time.sleep(2)
                 
                 if history_monitor:
-                    self._log("Проверка истории...")
+                    self._log("Проверка истории обменов...")
                     removed = history_monitor.force_check()
                     if removed > 0:
-                        print(f"🗑️  Удалено {removed} карт(ы) из инвентаря")
+                        print(f"🗑️  Удалено {removed} карт(ы) из инвентаря (успешные обмены)")
+                    else:
+                        print(f"ℹ️  Успешных обменов не обнаружено")
                 
                 return True
             
@@ -508,18 +512,22 @@ def send_trade_to_owner(
         print(f"⏭️  Обмен уже отправлен → {owner_name}")
         return False
     
+    if not dry_run and trade_manager.is_my_card_locked(my_instance_id):
+        if debug:
+            print(f"[TRADE] Карта уже используется в обмене: {my_instance_id}")
+        print(f"🔒 Карта занята → {owner_name}")
+        return False
+    
     if dry_run:
         print(f"[DRY-RUN] 📤 Обмен → {owner_name}")
         return True
     
-    # Ищем instance_id с исправленным offset
     his_instance_id = trade_manager.find_partner_card_instance(owner_id, his_card_id)
     
     if not his_instance_id:
         print(f"❌ Карта не найдена → {owner_name}")
         return False
     
-    # Отправляем обмен
     success = trade_manager.create_trade_direct_api(
         owner_id,
         my_instance_id,
@@ -528,6 +536,7 @@ def send_trade_to_owner(
     
     if success:
         trade_manager.mark_trade_sent(owner_id, his_card_id)
+        trade_manager.lock_my_card(my_instance_id)
         print(f"✅ Обмен отправлен → {owner_name} | {my_card_name} ({my_wanters} желающих)")
     else:
         print(f"❌ Ошибка → {owner_name}")
