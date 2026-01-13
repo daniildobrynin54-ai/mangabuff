@@ -1,0 +1,173 @@
+{
+  "88138": {
+    "card_id": 88138,
+    "name": "Замок",
+    "rank": "E",
+    "wanters_count": 1,
+    "timestamp": 1768302338.0431035,
+    "cached_at": "2026-01-13T13:05:38.043105",
+    "instance_id": 44566110
+  },
+  "108817": {
+    "card_id": 108817,
+    "name": "Сундук с золотом",
+    "rank": "E",
+    "wanters_count": 84,
+    "timestamp": 1768302366.9428093,
+    "cached_at": "2026-01-13T13:06:06.942811",
+    "instance_id": 89866213
+  },
+  "200853": {
+    "card_id": 200853,
+    "name": "Рыбки",
+    "rank": "E",
+    "wanters_count": 7,
+    "timestamp": 1768302367.3399541,
+    "cached_at": "2026-01-13T13:06:07.339957",
+    "instance_id": 342972833
+  },
+  "68657": {
+    "card_id": 68657,
+    "name": "Ли Цзы",
+    "rank": "E",
+    "wanters_count": 46,
+    "timestamp": 1768302367.688834,
+    "cached_at": "2026-01-13T13:06:07.688835",
+    "instance_id": 351963571
+  },
+  "78997": {
+    "card_id": 78997,
+    "name": "Лес",
+    "rank": "E",
+    "wanters_count": 24,
+    "timestamp": 1768302367.9909642,
+    "cached_at": "2026-01-13T13:06:07.990966",
+    "instance_id": 348448372
+  },
+  "273173": {
+    "card_id": 273173,
+    "name": "Домик",
+    "rank": "E",
+    "wanters_count": 10,
+    "timestamp": 1768302368.3139813,
+    "cached_at": "2026-01-13T13:06:08.313982",
+    "instance_id": 340788646
+  },
+  "110067": {
+    "card_id": 110067,
+    "name": "Шампанское",
+    "rank": "E",
+    "wanters_count": 19,
+    "timestamp": 1768302368.6326103,
+    "cached_at": "2026-01-13T13:06:08.632611",
+    "instance_id": 351963138
+  },
+  "83960": {
+    "card_id": 83960,
+    "name": "Горы",
+    "rank": "E",
+    "wanters_count": 95,
+    "timestamp": 1768302370.552438,
+    "cached_at": "2026-01-13T13:06:10.552439",
+    "instance_id": 98544865
+  },
+  "223944": {
+    "card_id": 223944,
+    "name": "Солнце",
+    "rank": "E",
+    "wanters_count": 7,
+    "timestamp": 1768302371.4925928,
+    "cached_at": "2026-01-13T13:06:11.492594",
+    "instance_id": 345917773
+  },
+  "66549": {
+    "card_id": 66549,
+    "name": "Картина",
+    "rank": "E",
+    "wanters_count": 92,
+    "timestamp": 1768302372.8443866,
+    "cached_at": "2026-01-13T13:06:12.844387",
+    "instance_id": 66897074
+  },
+  "54570": {
+    "card_id": 54570,
+    "name": "Дух",
+    "rank": "E",
+    "wanters_count": 10,
+    "timestamp": 1768302373.1338215,
+    "cached_at": "2026-01-13T13:06:13.133822",
+    "instance_id": 362437309
+  },
+  "256114": {
+    "card_id": 256114,
+    "name": "Со Иджи и О Роджи",
+    "rank": "E",
+    "wanters_count": 3,
+    "timestamp": 1768302373.4150047,
+    "cached_at": "2026-01-13T13:06:13.415006",
+    "instance_id": 362436280
+  },
+  "268438": {
+    "card_id": 268438,
+    "name": "Бокал",
+    "rank": "E",
+    "wanters_count": 12,
+    "timestamp": 1768302423.203617,
+    "cached_at": "2026-01-13T13:07:03.203619",
+    "instance_id": 348507220
+  },
+  "27067": {
+    "card_id": 27067,
+    "name": "Анни",
+    "rank": "E",
+    "wanters_count": 58,
+    "timestamp": 1768302423.554927,
+    "cached_at": "2026-01-13T13:07:03.554928",
+    "instance_id": 345917772
+  },
+  "168986": {
+    "card_id": 168986,
+    "name": "Эндимион",
+    "rank": "E",
+    "wanters_count": 1110,
+    "timestamp": 1768302423.9023948,
+    "cached_at": "2026-01-13T13:07:03.902396",
+    "instance_id": 379330992
+  },
+  "66275": {
+    "card_id": 66275,
+    "name": "Хэ Шань",
+    "rank": "E",
+    "wanters_count": 11,
+    "timestamp": 1768302424.3286965,
+    "cached_at": "2026-01-13T13:07:04.328697",
+    "instance_id": 367982926
+  },
+  "144109": {
+    "card_id": 144109,
+    "name": "Би Гван",
+    "rank": "E",
+    "wanters_count": 7,
+    "timestamp": 1768302426.7584765,
+    "cached_at": "2026-01-13T13:07:06.758478",
+    "instance_id": 94335779
+  },
+  "31828": {
+    "card_id": 31828,
+    "name": "Суп Кимчи",
+    "rank": "E",
+    "wanters_count": 570,
+    "timestamp": 1768302427.158763,
+    "cached_at": "2026-01-13T13:07:07.158764",
+    "instance_id": 175484957
+  },
+  "217598": {
+    "card_id": 217598,
+    "name": "Тряпка",
+    "rank": "E",
+    "wanters_count": 3,
+    "timestamp": 1768302427.4941964,
+    "cached_at": "2026-01-13T13:07:07.494198",
+    "instance_id": 367000463
+  }
+}

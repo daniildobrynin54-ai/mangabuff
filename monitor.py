@@ -1,177 +1,265 @@
+"""Мониторинг страницы буста клуба."""
+
+import os
 import threading
 import time
-import json
-import os
 from typing import Optional
 import requests
 from bs4 import BeautifulSoup
-from config import BASE_URL
+from config import (
+    BASE_URL,
+    REQUEST_TIMEOUT,
+    OUTPUT_DIR,
+    BOOST_CARD_FILE,
+    MONITOR_CHECK_INTERVAL,
+    MONITOR_STATUS_INTERVAL
+)
 from boost import get_boost_card_info
 from trade import cancel_all_sent_trades
+from utils import save_json, print_section, print_success, print_warning
 
 
 class BoostMonitor:
-    """Монитор страницы буста клуба"""
+    """Монитор страницы буста клуба."""
     
-    def __init__(self, session: requests.Session, club_url: str, output_dir: str = "created_files"):
+    def __init__(
+        self,
+        session: requests.Session,
+        club_url: str,
+        output_dir: str = OUTPUT_DIR
+    ):
+        """
+        Инициализация монитора.
+        
+        Args:
+            session: Сессия requests
+            club_url: URL страницы клуба
+            output_dir: Директория для файлов
+        """
         self.session = session
         self.club_url = club_url
         self.output_dir = output_dir
         self.running = False
         self.thread = None
         self.boost_available = False
-        self.card_changed = False  # Флаг изменения карты
-        self.current_card_id = None  # ID текущей карты
-        
+        self.card_changed = False
+        self.current_card_id = None
+    
     def check_boost_available(self) -> Optional[str]:
         """
-        Проверяет доступность кнопки пожертвования
+        Проверяет доступность кнопки пожертвования.
         
         Returns:
             URL буста если доступен, иначе None
         """
         try:
-            resp = self.session.get(self.club_url, timeout=(4, 8))
-            if resp.status_code != 200:
+            response = self.session.get(self.club_url, timeout=REQUEST_TIMEOUT)
+            
+            if response.status_code != 200:
                 return None
             
-            soup = BeautifulSoup(resp.text, "html.parser")
-            
-            # Ищем кнопку по разным критериям
-            boost_button = None
-            
-            # Вариант 1: по классу club_boost-btn
-            boost_button = soup.select_one('.club_boost-btn, .club-boost-btn')
-            
-            # Вариант 2: по тексту "Пожертвовать карту"
-            if not boost_button:
-                boost_button = soup.find('button', string=lambda text: text and 'Пожертвовать карту' in text)
+            soup = BeautifulSoup(response.text, "html.parser")
+            boost_button = self._find_boost_button(soup)
             
             if not boost_button:
-                boost_button = soup.find('a', string=lambda text: text and 'Пожертвовать карту' in text)
+                return None
             
-            # Вариант 3: ищем любую кнопку/ссылку содержащую текст
-            if not boost_button:
-                for elem in soup.find_all(['a', 'button']):
-                    text = elem.get_text(strip=True)
-                    if 'Пожертвовать' in text or 'пожертвовать' in text:
-                        boost_button = elem
-                        break
+            # Извлекаем URL
+            href = boost_button.get('href')
+            if href:
+                if not href.startswith('http'):
+                    return f"{BASE_URL}{href}"
+                return href
             
+            # Если href нет - возвращаем текущую страницу
+            return self.club_url
+            
+        except requests.RequestException as e:
+            print_warning(f"Ошибка проверки буста: {e}")
+            return None
+    
+    def _find_boost_button(self, soup: BeautifulSoup):
+        """Находит кнопку буста на странице."""
+        # Вариант 1: по классу
+        boost_button = soup.select_one('.club_boost-btn, .club-boost-btn')
+        if boost_button:
+            return boost_button
+        
+        # Вариант 2: по тексту
+        for tag in ['button', 'a']:
+            boost_button = soup.find(
+                tag,
+                string=lambda text: text and 'Пожертвовать карту' in text
+            )
             if boost_button:
-                # Если это форма или кнопка без href - возвращаем текущую страницу
-                href = boost_button.get('href')
-                if href:
-                    if not href.startswith('http'):
-                        return f"{BASE_URL}{href}"
-                    return href
-                else:
-                    # Кнопка найдена, но без href - значит это текущая страница
-                    return self.club_url
-            
-            return None
-            
-        except Exception as e:
-            print(f"⚠️  Ошибка проверки буста: {e}")
-            return None
+                return boost_button
+        
+        # Вариант 3: поиск по содержимому
+        for elem in soup.find_all(['a', 'button']):
+            text = elem.get_text(strip=True)
+            if 'Пожертвовать' in text or 'пожертвовать' in text:
+                return elem
+        
+        return None
     
     def contribute_card(self, boost_url: str) -> bool:
         """
-        Вносит карту в клуб
+        Вносит карту в клуб.
         
         Args:
             boost_url: URL страницы буста
         
         Returns:
-            True если успешно, False если ошибка
+            True если успешно
         """
         try:
-            # Получаем информацию о карте для буста
-            boost_card = get_boost_card_info(self.session, boost_url)
+            # Получаем информацию о ТЕКУЩЕЙ карте для внесения
+            current_boost_card = get_boost_card_info(self.session, boost_url)
             
-            if not boost_card:
-                print("❌ Не удалось получить информацию о карте для буста")
+            if not current_boost_card:
+                print_warning("Не удалось получить информацию о карте для буста")
                 return False
             
-            instance_id = boost_card.get('id', 0)
-            new_card_id = boost_card.get('card_id', 0)
+            instance_id = current_boost_card.get('id', 0)
+            current_card_id = current_boost_card.get('card_id', 0)
             
             if not instance_id:
-                print("❌ Не удалось получить instance_id карты")
+                print_warning("Не удалось получить instance_id карты")
                 return False
             
-            # Проверяем, изменилась ли карта
-            if self.current_card_id and self.current_card_id != new_card_id:
+            # Выводим информацию о карте которую вносим
+            self._print_card_info(current_boost_card, instance_id, is_new=False)
+            
+            # Отправляем запрос на внесение
+            success = self._send_contribute_request(boost_url, instance_id)
+            
+            if not success:
+                print_warning(f"Ошибка внесения карты")
+                return False
+            
+            print_success("Карта успешно внесена в клуб!")
+            
+            # Отменяем все обмены
+            self._cancel_pending_trades()
+            
+            # Делаем паузу чтобы сервер обновил данные
+            print("\n⏳ Ожидание обновления данных на сервере (2 сек)...")
+            time.sleep(2)
+            
+            # ВАЖНО: Загружаем информацию о НОВОЙ карте
+            print("🔄 Загружаем информацию о новой карте...")
+            new_boost_card = get_boost_card_info(self.session, boost_url)
+            
+            if not new_boost_card:
+                print_warning("Не удалось получить информацию о новой карте")
+                return False
+            
+            new_card_id = new_boost_card.get('card_id', 0)
+            new_instance_id = new_boost_card.get('id', 0)
+            
+            # Проверяем что карта действительно изменилась
+            if new_card_id != current_card_id:
+                print_success(f"Обнаружена новая карта!")
+                print(f"   Старая карта ID: {current_card_id}")
+                print(f"   Новая карта ID: {new_card_id}\n")
+                
+                # Выводим информацию о новой карте
+                self._print_card_info(new_boost_card, new_instance_id, is_new=True)
+                
+                # Сохраняем НОВУЮ карту
+                self._save_boost_card(new_boost_card)
+                self.current_card_id = new_card_id
+                
+                # Устанавливаем флаг для перезапуска обработки
                 self.card_changed = True
-                print(f"\n⚠️  КАРТА ИЗМЕНИЛАСЬ! Старая: {self.current_card_id} -> Новая: {new_card_id}")
-            
-            self.current_card_id = new_card_id
-            
-            # Сохраняем информацию о карте
-            boost_output = os.path.join(self.output_dir, "boost_card.json")
-            with open(boost_output, "w", encoding="utf-8") as f:
-                json.dump(boost_card, f, ensure_ascii=False, indent=2)
-            
-            print("\n" + "="*60)
-            print("🎁 ОБНАРУЖЕНА ВОЗМОЖНОСТЬ ВНЕСТИ КАРТУ!")
-            print("="*60)
-            print(f"   Название: {boost_card['name'] or '(не удалось получить)'}")
-            print(f"   ID карты: {boost_card['card_id']} | Instance ID: {instance_id} | Ранг: {boost_card['rank'] or '(не удалось получить)'}")
-            print(f"   Владельцев: {boost_card['owners_count']} | Желающих: {boost_card['wanters_count']}")
-            print(f"💾 Карточка для буста перезаписана в: {boost_output}")
-            print("="*60 + "\n")
-            
-            # Отправляем запрос на внесение карты
-            contribute_url = f"{BASE_URL}/clubs/boost"
-            
-            # Получаем CSRF токен из сессии
-            csrf_token = self.session.headers.get('X-CSRF-TOKEN', '')
-            
-            data = {
-                "card_id": instance_id,
-                "_token": csrf_token
-            }
-            
-            resp = self.session.post(
-                contribute_url,
-                data=data,
-                headers={
-                    "Referer": boost_url,
-                    "Origin": BASE_URL,
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                },
-                timeout=(4, 8)
-            )
-            
-            if resp.status_code == 200:
-                print("✅ Карта успешно внесена в клуб!")
                 
-                # Отменяем все отправленные обмены
-                print("🔄 Отменяем все отправленные обмены...")
-                cancel_success = cancel_all_sent_trades(self.session, debug=False)
-                
-                if cancel_success:
-                    print("✅ Все отправленные обмены успешно отменены!")
-                else:
-                    print("⚠️  Не удалось отменить обмены (возможно, их не было)")
-                
-                return True
+                print("🔄 Флаг изменения карты установлен. Ожидаем перезапуска обработки...\n")
             else:
-                print(f"⚠️  Ошибка внесения карты: статус {resp.status_code}")
-                print(f"   Ответ: {resp.text[:200]}")
-                return False
-                
+                print_warning(f"Карта не изменилась (ID: {current_card_id})")
+                print("   Возможно, буст закончился или карта та же самая\n")
+                self.current_card_id = current_card_id
+            
+            return True
+            
         except Exception as e:
-            print(f"❌ Ошибка при внесении карты: {e}")
+            print_warning(f"Ошибка при внесении карты: {e}")
             import traceback
             traceback.print_exc()
             return False
     
-    def monitor_loop(self):
-        """Основной цикл мониторинга"""
+    def _save_boost_card(self, boost_card: dict) -> None:
+        """Сохраняет информацию о буст-карте."""
+        filepath = os.path.join(self.output_dir, BOOST_CARD_FILE)
+        save_json(filepath, boost_card)
+    
+    def _print_card_info(self, boost_card: dict, instance_id: int, is_new: bool = False) -> None:
+        """Выводит информацию о карте."""
+        if is_new:
+            print_section("🎁 НОВАЯ КАРТА ДЛЯ ВКЛАДА!")
+        else:
+            print_section("🎁 ОБНАРУЖЕНА ВОЗМОЖНОСТЬ ВНЕСТИ КАРТУ!")
+        
+        name = boost_card.get('name', '(не удалось получить)')
+        card_id = boost_card.get('card_id', '?')
+        rank = boost_card.get('rank', '(не удалось получить)')
+        owners = boost_card.get('owners_count', '?')
+        wanters = boost_card.get('wanters_count', '?')
+        
+        print(f"   Название: {name}")
+        print(f"   ID карты: {card_id} | Instance ID: {instance_id} | Ранг: {rank}")
+        print(f"   Владельцев: {owners} | Желающих: {wanters}")
+        
+        if is_new:
+            filepath = os.path.join(self.output_dir, BOOST_CARD_FILE)
+            print(f"💾 Новая карта сохранена в: {filepath}")
+        
+        print("=" * 60 + "\n")
+    
+    def _send_contribute_request(self, boost_url: str, instance_id: int) -> bool:
+        """Отправляет запрос на внесение карты."""
+        url = f"{BASE_URL}/clubs/boost"
+        csrf_token = self.session.headers.get('X-CSRF-TOKEN', '')
+        
+        data = {
+            "card_id": instance_id,
+            "_token": csrf_token
+        }
+        
+        headers = {
+            "Referer": boost_url,
+            "Origin": BASE_URL,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        }
+        
+        try:
+            response = self.session.post(
+                url,
+                data=data,
+                headers=headers,
+                timeout=REQUEST_TIMEOUT
+            )
+            
+            return response.status_code == 200
+            
+        except requests.RequestException:
+            return False
+    
+    def _cancel_pending_trades(self) -> None:
+        """Отменяет все отправленные обмены."""
+        print("🔄 Отменяем все отправленные обмены...")
+        
+        success = cancel_all_sent_trades(self.session, debug=False)
+        
+        if success:
+            print_success("Все отправленные обмены успешно отменены!")
+        else:
+            print_warning("Не удалось отменить обмены (возможно, их не было)")
+    
+    def monitor_loop(self) -> None:
+        """Основной цикл мониторинга."""
         print(f"\n🔄 Запущен мониторинг страницы: {self.club_url}")
-        print("   Проверка каждые 2 секунды...")
+        print(f"   Проверка каждые {MONITOR_CHECK_INTERVAL} секунд...")
         print("   Нажмите Ctrl+C для остановки\n")
         
         check_count = 0
@@ -183,7 +271,8 @@ class BoostMonitor:
             boost_url = self.check_boost_available()
             
             if boost_url:
-                print(f"\n🎯 [{time.strftime('%H:%M:%S')}] Проверка #{check_count}: БУСТ ДОСТУПЕН!")
+                timestamp = time.strftime('%H:%M:%S')
+                print(f"\n🎯 [{timestamp}] Проверка #{check_count}: БУСТ ДОСТУПЕН!")
                 
                 # Вносим карту
                 success = self.contribute_card(boost_url)
@@ -194,25 +283,26 @@ class BoostMonitor:
                 else:
                     print("   ⚠️  Продолжаем мониторинг...")
             else:
-                # Выводим статус каждые 30 проверок (60 секунд)
-                if check_count == 1 or check_count % 30 == 0:
-                    print(f"⏳ [{time.strftime('%H:%M:%S')}] Проверка #{check_count}: буст недоступен")
+                # Выводим статус периодически
+                if check_count == 1 or check_count % MONITOR_STATUS_INTERVAL == 0:
+                    timestamp = time.strftime('%H:%M:%S')
+                    print(f"⏳ [{timestamp}] Проверка #{check_count}: буст недоступен")
             
-            # Задержка 2 секунды
-            time.sleep(2)
+            # Задержка до следующей проверки
+            time.sleep(MONITOR_CHECK_INTERVAL)
     
-    def start(self):
-        """Запускает мониторинг в отдельном потоке"""
+    def start(self) -> None:
+        """Запускает мониторинг в отдельном потоке."""
         if self.running:
-            print("⚠️  Мониторинг уже запущен")
+            print_warning("Мониторинг уже запущен")
             return
         
         self.running = True
         self.thread = threading.Thread(target=self.monitor_loop, daemon=True)
         self.thread.start()
     
-    def stop(self):
-        """Останавливает мониторинг"""
+    def stop(self) -> None:
+        """Останавливает мониторинг."""
         if not self.running:
             return
         
@@ -222,20 +312,24 @@ class BoostMonitor:
         if self.thread:
             self.thread.join(timeout=5)
         
-        print("✅ Мониторинг остановлен")
+        print_success("Мониторинг остановлен")
     
     def is_running(self) -> bool:
-        """Проверяет, запущен ли мониторинг"""
+        """Проверяет, запущен ли мониторинг."""
         return self.running
 
 
-def start_boost_monitor(session: requests.Session, club_url: str, output_dir: str = "created_files") -> BoostMonitor:
+def start_boost_monitor(
+    session: requests.Session,
+    club_url: str,
+    output_dir: str = OUTPUT_DIR
+) -> BoostMonitor:
     """
-    Удобная функция для запуска мониторинга
+    Удобная функция для запуска мониторинга.
     
     Args:
         session: Сессия requests
-        club_url: URL страницы буста клуба
+        club_url: URL страницы клуба
         output_dir: Директория для файлов
     
     Returns:
