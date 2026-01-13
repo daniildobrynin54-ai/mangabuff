@@ -1,11 +1,17 @@
-"""Главный модуль с мониторингом истории обменов."""
+"""Главный модуль с поддержкой прокси и rate limiting."""
 
 import argparse
 import sys
 import time
+import os
 from typing import Optional
 
-from config import OUTPUT_DIR, BOOST_CARD_FILE, WAIT_AFTER_ALL_OWNERS, WAIT_CHECK_INTERVAL
+from config import (
+    OUTPUT_DIR,
+    BOOST_CARD_FILE,
+    WAIT_AFTER_ALL_OWNERS,
+    WAIT_CHECK_INTERVAL
+)
 from auth import login
 from inventory import get_user_inventory, InventoryManager
 from boost import get_boost_card_info
@@ -15,35 +21,59 @@ from monitor import start_boost_monitor
 from trade import (
     send_trade_to_owner,
     cancel_all_sent_trades,
-    TradeHistoryMonitor  # НОВОЕ
+    TradeHistoryMonitor
 )
 from card_replacement import check_and_replace_if_needed
 from daily_stats import create_stats_manager
+from proxy_manager import create_proxy_manager
+from rate_limiter import get_rate_limiter
 from utils import (
-    ensure_dir_exists, save_json, load_json, format_card_info,
-    print_section, print_success, print_error, print_warning, print_info
+    ensure_dir_exists,
+    save_json,
+    load_json,
+    format_card_info,
+    print_section,
+    print_success,
+    print_error,
+    print_warning,
+    print_info
 )
 
 
 class MangaBuffApp:
-    """Главное приложение с мониторингом истории."""
+    """Главное приложение с прокси и rate limiting."""
     
     def __init__(self, args: argparse.Namespace):
         self.args = args
         self.session = None
         self.monitor = None
-        self.history_monitor = None  # НОВОЕ
+        self.history_monitor = None
         self.output_dir = OUTPUT_DIR
         self.inventory_manager = InventoryManager(self.output_dir)
         self.stats_manager = None
         self.processor = None
+        self.proxy_manager = None
+        self.rate_limiter = get_rate_limiter()
     
     def setup(self) -> bool:
         """Настройка приложения."""
         ensure_dir_exists(self.output_dir)
         
-        print("🔐 Вход в аккаунт...")
-        self.session = login(self.args.email, self.args.password)
+        # Инициализируем прокси
+        self.proxy_manager = create_proxy_manager(
+            proxy_url=self.args.proxy,
+            proxy_file=self.args.proxy_file
+        )
+        
+        # Выводим информацию о rate limiting
+        print(f"⏱️  Rate Limiting: {self.rate_limiter.max_requests} req/min")
+        
+        print("\n🔐 Вход в аккаунт...")
+        self.session = login(
+            self.args.email,
+            self.args.password,
+            self.proxy_manager
+        )
         
         if not self.session:
             print_error("Ошибка авторизации")
@@ -67,9 +97,7 @@ class MangaBuffApp:
         return True
     
     def init_history_monitor(self) -> bool:
-        """
-        🆕 Инициализирует монитор истории обменов.
-        """
+        """Инициализирует монитор истории обменов."""
         print("📊 Инициализация монитора истории обменов...")
         
         self.history_monitor = TradeHistoryMonitor(
@@ -79,7 +107,6 @@ class MangaBuffApp:
             debug=self.args.debug
         )
         
-        # Запускаем мониторинг (проверка каждые 10 секунд)
         self.history_monitor.start(check_interval=10)
         
         print_success("Монитор истории запущен\n")
@@ -157,7 +184,11 @@ class MangaBuffApp:
         
         self.monitor.current_card_id = boost_card['card_id']
     
-    def wait_for_boost_or_timeout(self, card_id: int, timeout: int = WAIT_AFTER_ALL_OWNERS) -> bool:
+    def wait_for_boost_or_timeout(
+        self,
+        card_id: int,
+        timeout: int = WAIT_AFTER_ALL_OWNERS
+    ) -> bool:
         """Ожидает буст или таймаут."""
         if not self.monitor:
             return False
@@ -222,6 +253,10 @@ class MangaBuffApp:
             
             print(f"\n🎯 Обработка: {current_boost_card['name']} (ID: {current_card_id})")
             
+            # Выводим текущий rate
+            current_rate = self.rate_limiter.get_current_rate()
+            print(f"📊 Текущий rate: {current_rate}/{self.rate_limiter.max_requests} req/min\n")
+            
             # Обрабатываем владельцев
             total = process_owners_page_by_page(
                 session=self.session,
@@ -258,11 +293,10 @@ class MangaBuffApp:
                 else:
                     print("🔄 Отменяем обмены...")
                     if not self.args.dry_run:
-                        # 🆕 ПЕРЕДАЕМ history_monitor для автоматической проверки
                         success = cancel_all_sent_trades(
                             self.session,
                             self.processor.trade_manager,
-                            self.history_monitor,  # НОВОЕ!
+                            self.history_monitor,
                             self.args.debug
                         )
                         if success:
@@ -320,7 +354,6 @@ class MangaBuffApp:
             if not self.init_stats_manager():
                 print_warning("Работа без статистики")
         
-        # 🆕 ИНИЦИАЛИЗИРУЕМ МОНИТОР ИСТОРИИ
         if not self.args.skip_inventory:
             self.init_history_monitor()
         
@@ -337,7 +370,6 @@ class MangaBuffApp:
         
         self.wait_for_monitor()
         
-        # Останавливаем монитор истории
         if self.history_monitor:
             self.history_monitor.stop()
         
@@ -347,18 +379,51 @@ class MangaBuffApp:
 def create_argument_parser() -> argparse.ArgumentParser:
     """Создает парсер аргументов."""
     parser = argparse.ArgumentParser(
-        description="MangaBuff с мониторингом истории обменов"
+        description="MangaBuff с прокси и rate limiting"
     )
     
+    # Основные параметры
     parser.add_argument("--email", required=True, help="Email")
     parser.add_argument("--password", required=True, help="Пароль")
     parser.add_argument("--user_id", required=True, help="ID пользователя")
     parser.add_argument("--boost_url", help="URL буста")
-    parser.add_argument("--skip_inventory", action="store_true", help="Пропустить инвентарь")
-    parser.add_argument("--only_list_owners", action="store_true", help="Только список владельцев")
-    parser.add_argument("--enable_monitor", action="store_true", help="Включить мониторинг")
-    parser.add_argument("--dry_run", action="store_true", help="Тестовый режим")
-    parser.add_argument("--debug", action="store_true", help="Отладка")
+    
+    # Прокси
+    parser.add_argument(
+        "--proxy",
+        help="URL прокси (http://host:port или socks5://user:pass@host:port)"
+    )
+    parser.add_argument(
+        "--proxy_file",
+        help="Файл с прокси (первая строка)"
+    )
+    
+    # Режимы работы
+    parser.add_argument(
+        "--skip_inventory",
+        action="store_true",
+        help="Пропустить инвентарь"
+    )
+    parser.add_argument(
+        "--only_list_owners",
+        action="store_true",
+        help="Только список владельцев"
+    )
+    parser.add_argument(
+        "--enable_monitor",
+        action="store_true",
+        help="Включить мониторинг"
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="Тестовый режим"
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Отладка"
+    )
     
     return parser
 
@@ -367,6 +432,10 @@ def main():
     """Точка входа."""
     parser = create_argument_parser()
     args = parser.parse_args()
+    
+    # Можно задать прокси через переменную окружения
+    if not args.proxy and not args.proxy_file:
+        args.proxy = os.getenv('PROXY_URL')
     
     app = MangaBuffApp(args)
     sys.exit(app.run())
