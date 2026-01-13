@@ -15,6 +15,7 @@ from config import (
     TRADE_RANDOM_DELAY_MAX,
     FIRST_PAGE_SKIP_OWNERS
 )
+from trade import TradeManager
 
 
 class Owner:
@@ -218,6 +219,14 @@ class OwnersProcessor:
         self.dry_run = dry_run
         self.debug = debug
         self.last_trade_time = 0.0
+        # Создаем единый TradeManager для отслеживания отправленных обменов
+        self.trade_manager = TradeManager(session, debug) if not dry_run else None
+    
+    def reset_state(self) -> None:
+        """Сбрасывает состояние процессора при смене карты."""
+        if self.trade_manager:
+            self.trade_manager.clear_sent_trades()
+        self.last_trade_time = 0.0
     
     def _wait_before_trade(self) -> None:
         """Ожидает перед следующим обменом."""
@@ -287,13 +296,14 @@ class OwnersProcessor:
             print(f"\n⚠️  Карта изменилась! Прерываем перед отправкой обмена")
             return False, True  # Не успешно, прервать
         
-        # Отправляем обмен
+        # Отправляем обмен (передаем trade_manager для отслеживания)
         success = self.send_trade_func(
             session=self.session,
             owner_id=int(owner.id),
             owner_name=owner.name,
             my_card=selected_card,
             his_card_id=his_card_id,
+            trade_manager=self.trade_manager,  # ВАЖНО: передаем менеджер
             dry_run=self.dry_run,
             debug=self.debug
         )
@@ -399,6 +409,7 @@ def process_owners_page_by_page(
     select_card_func: Callable,
     send_trade_func: Optional[Callable] = None,
     monitor_obj=None,
+    processor: Optional['OwnersProcessor'] = None,
     dry_run: bool = True,
     debug: bool = False
 ) -> int:
@@ -413,19 +424,22 @@ def process_owners_page_by_page(
         select_card_func: Функция подбора карты
         send_trade_func: Функция отправки обмена
         monitor_obj: Объект монитора
+        processor: Существующий процессор (для сохранения состояния)
         dry_run: Тестовый режим
         debug: Режим отладки
     
     Returns:
         Количество обработанных владельцев
     """
-    processor = OwnersProcessor(
-        session=session,
-        select_card_func=select_card_func,
-        send_trade_func=send_trade_func,
-        dry_run=dry_run,
-        debug=debug
-    )
+    # Используем существующий процессор или создаем новый
+    if not processor:
+        processor = OwnersProcessor(
+            session=session,
+            select_card_func=select_card_func,
+            send_trade_func=send_trade_func,
+            dry_run=dry_run,
+            debug=debug
+        )
     
     return processor.process_page_by_page(
         card_id=card_id,

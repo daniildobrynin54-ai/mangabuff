@@ -2,14 +2,14 @@
 
 import json
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 import requests
 from bs4 import BeautifulSoup
 from config import BASE_URL, REQUEST_TIMEOUT, CARD_API_DELAY
 
 
 class TradeManager:
-    """Менеджер обменов карточками."""
+    """Менеджер обменов карточками с отслеживанием состояния."""
     
     def __init__(self, session: requests.Session, debug: bool = False):
         """
@@ -21,6 +21,8 @@ class TradeManager:
         """
         self.session = session
         self.debug = debug
+        # Отслеживание отправленных обменов (owner_id, his_card_id)
+        self.sent_trades: Set[tuple[int, int]] = set()
     
     def _log(self, message: str) -> None:
         """Выводит отладочное сообщение."""
@@ -65,6 +67,10 @@ class TradeManager:
         Returns:
             True если успешно
         """
+        # Проверка по статус-коду
+        if response.status_code == 200:
+            return True
+            
         # Проверка по редиректу
         if response.status_code in (301, 302):
             location = response.headers.get("Location", "")
@@ -97,19 +103,49 @@ class TradeManager:
         
         return False
     
+    def has_trade_sent(self, receiver_id: int, his_card_id: int) -> bool:
+        """
+        Проверяет, был ли уже отправлен обмен этому владельцу на эту карту.
+        
+        Args:
+            receiver_id: ID получателя
+            his_card_id: ID карточки
+        
+        Returns:
+            True если обмен уже отправлен
+        """
+        return (receiver_id, his_card_id) in self.sent_trades
+    
+    def mark_trade_sent(self, receiver_id: int, his_card_id: int) -> None:
+        """
+        Отмечает обмен как отправленный.
+        
+        Args:
+            receiver_id: ID получателя
+            his_card_id: ID карточки
+        """
+        self.sent_trades.add((receiver_id, his_card_id))
+    
+    def clear_sent_trades(self) -> None:
+        """Очищает список отправленных обменов."""
+        self.sent_trades.clear()
+        self._log("Список отправленных обменов очищен")
+    
     def create_trade(
         self,
         receiver_id: int,
         my_instance_id: int,
-        his_instance_id: int
+        his_instance_id: int,
+        max_retries: int = 2
     ) -> bool:
         """
-        Отправляет обмен карточками через API.
+        Отправляет обмен карточками через API с повторными попытками.
         
         Args:
             receiver_id: ID получателя обмена
             my_instance_id: Instance ID моей карточки
             his_instance_id: Instance ID карточки получателя
+            max_retries: Максимальное количество попыток
         
         Returns:
             True если обмен успешно отправлен
@@ -129,47 +165,62 @@ class TradeManager:
         self._log(f"  creator_card_ids[]: {my_instance_id}")
         self._log(f"  receiver_card_ids[]: {his_instance_id}")
         
-        try:
-            # Первая попытка с form data
-            response = self.session.post(
-                url,
-                data=data,
-                headers=headers,
-                allow_redirects=False,
-                timeout=REQUEST_TIMEOUT
-            )
-            
-            self._log(f"Response status: {response.status_code}")
-            
-            if self._is_success_response(response):
-                return True
-            
-            # Вторая попытка с JSON payload
-            json_payload = {
-                "receiver_id": receiver_id,
-                "creator_card_ids": [my_instance_id],
-                "receiver_card_ids": [his_instance_id],
-            }
-            
-            response2 = self.session.post(
-                url,
-                json=json_payload,
-                headers={**headers, "Content-Type": "application/json"},
-                allow_redirects=False,
-                timeout=REQUEST_TIMEOUT
-            )
-            
-            if self._is_success_response(response2):
-                return True
-            
-            self._log(f"Trade failed. Status: {response.status_code}")
-            self._log(f"Response: {response.text[:200]}")
-            
-            return False
-            
-        except requests.RequestException as e:
-            self._log(f"Network error: {e}")
-            return False
+        for attempt in range(1, max_retries + 1):
+            try:
+                if attempt > 1:
+                    self._log(f"Попытка {attempt}/{max_retries}...")
+                    time.sleep(1)  # Небольшая задержка перед повтором
+                
+                # Первая попытка с form data
+                response = self.session.post(
+                    url,
+                    data=data,
+                    headers=headers,
+                    allow_redirects=False,
+                    timeout=REQUEST_TIMEOUT
+                )
+                
+                self._log(f"Response status: {response.status_code}")
+                
+                if self._is_success_response(response):
+                    return True
+                
+                # Если статус 422 - значит карта уже в обмене
+                if response.status_code == 422:
+                    self._log("Карта уже участвует в обмене")
+                    return False
+                
+                # Вторая попытка с JSON payload
+                json_payload = {
+                    "receiver_id": receiver_id,
+                    "creator_card_ids": [my_instance_id],
+                    "receiver_card_ids": [his_instance_id],
+                }
+                
+                response2 = self.session.post(
+                    url,
+                    json=json_payload,
+                    headers={**headers, "Content-Type": "application/json"},
+                    allow_redirects=False,
+                    timeout=REQUEST_TIMEOUT
+                )
+                
+                if self._is_success_response(response2):
+                    return True
+                
+                if response2.status_code == 422:
+                    self._log("Карта уже участвует в обмене (JSON)")
+                    return False
+                
+                self._log(f"Trade failed. Status: {response.status_code}")
+                self._log(f"Response: {response.text[:200]}")
+                
+            except requests.RequestException as e:
+                self._log(f"Network error on attempt {attempt}: {e}")
+                if attempt == max_retries:
+                    return False
+        
+        return False
     
     def cancel_all_sent_trades(self) -> bool:
         """
@@ -202,7 +253,13 @@ class TradeManager:
             )
             
             self._log(f"Response status: {response.status_code}")
-            return response.status_code == 200
+            
+            if response.status_code == 200:
+                # Очищаем список отправленных обменов после успешной отмены
+                self.clear_sent_trades()
+                return True
+            
+            return False
             
         except requests.RequestException as e:
             self._log(f"Network error: {e}")
@@ -336,6 +393,7 @@ def send_trade_to_owner(
     owner_name: str,
     my_card: Dict[str, Any],
     his_card_id: int,
+    trade_manager: Optional[TradeManager] = None,
     dry_run: bool = True,
     debug: bool = False
 ) -> bool:
@@ -348,6 +406,7 @@ def send_trade_to_owner(
         owner_name: Имя владельца
         my_card: Информация о моей карте
         his_card_id: ID карточки в клубе
+        trade_manager: Менеджер обменов (для отслеживания состояния)
         dry_run: Тестовый режим
         debug: Режим отладки
     
@@ -364,15 +423,23 @@ def send_trade_to_owner(
             print(f"[TRADE] Missing instance_id for my card")
         return False
     
+    # Создаем менеджер если не передан
+    if not trade_manager:
+        trade_manager = TradeManager(session, debug)
+    
+    # Проверяем, не был ли уже отправлен обмен
+    if not dry_run and trade_manager.has_trade_sent(owner_id, his_card_id):
+        if debug:
+            print(f"[TRADE] Обмен уже был отправлен {owner_name} (ID: {owner_id})")
+        print(f"⏭️  Обмен уже отправлен → {owner_name}")
+        return False
+    
     # Dry-run режим
     if dry_run:
         print(f"[DRY-RUN] 📤 Обмен → {owner_name} (ID: {owner_id})")
         print(f"           Моя карта: {my_card_name} (ID: {my_card_id}, желающих: {my_wanters})")
         print(f"           Instance ID: {my_instance_id} ↔ card_id: {his_card_id}")
         return True
-    
-    # Создаем менеджер обменов
-    trade_manager = TradeManager(session, debug)
     
     # Находим instance_id карточки у владельца
     if debug:
@@ -389,10 +456,17 @@ def send_trade_to_owner(
     if debug:
         print(f"[TRADE] Найден instance_id: {his_instance_id}")
     
-    # Отправляем обмен
-    success = trade_manager.create_trade(owner_id, my_instance_id, his_instance_id)
+    # Отправляем обмен с повторными попытками
+    success = trade_manager.create_trade(
+        owner_id, 
+        my_instance_id, 
+        his_instance_id,
+        max_retries=2  # 2 попытки при ошибке
+    )
     
     if success:
+        # Отмечаем обмен как отправленный
+        trade_manager.mark_trade_sent(owner_id, his_card_id)
         print(f"✅ Обмен отправлен → {owner_name} | Моя карта: {my_card_name} ({my_wanters} желающих)")
     else:
         print(f"❌ Ошибка отправки → {owner_name}")
@@ -402,6 +476,7 @@ def send_trade_to_owner(
 
 def cancel_all_sent_trades(
     session: requests.Session,
+    trade_manager: Optional[TradeManager] = None,
     debug: bool = False
 ) -> bool:
     """
@@ -409,10 +484,13 @@ def cancel_all_sent_trades(
     
     Args:
         session: Сессия requests
+        trade_manager: Менеджер обменов
         debug: Режим отладки
     
     Returns:
         True если успешно
     """
-    trade_manager = TradeManager(session, debug)
+    if not trade_manager:
+        trade_manager = TradeManager(session, debug)
+    
     return trade_manager.cancel_all_sent_trades()

@@ -15,7 +15,7 @@ from auth import login
 from inventory import get_user_inventory, InventoryManager
 from boost import get_boost_card_info
 from card_selector import select_trade_card
-from owners_parser import process_owners_page_by_page, find_all_available_owners
+from owners_parser import process_owners_page_by_page, find_all_available_owners, OwnersProcessor
 from monitor import start_boost_monitor
 from trade import send_trade_to_owner, cancel_all_sent_trades
 from card_replacement import check_and_replace_if_needed
@@ -49,6 +49,7 @@ class MangaBuffApp:
         self.output_dir = OUTPUT_DIR
         self.inventory_manager = InventoryManager(self.output_dir)
         self.stats_manager = None  # Инициализируется после получения boost_url
+        self.processor = None  # Процессор владельцев (для сохранения состояния)
     
     def setup(self) -> bool:
         """
@@ -93,6 +94,17 @@ class MangaBuffApp:
         self.stats_manager.print_stats(force_refresh=True)
         
         return True
+    
+    def init_processor(self) -> None:
+        """Инициализирует процессор владельцев."""
+        if not self.processor:
+            self.processor = OwnersProcessor(
+                session=self.session,
+                select_card_func=select_trade_card,
+                send_trade_func=send_trade_to_owner,
+                dry_run=self.args.dry_run,
+                debug=self.args.debug
+            )
     
     def load_inventory(self) -> Optional[list]:
         """
@@ -250,6 +262,9 @@ class MangaBuffApp:
         Args:
             boost_card: Информация о буст-карте
         """
+        # Инициализируем процессор один раз
+        self.init_processor()
+        
         while True:
             # Загружаем актуальную карту из файла
             current_boost_card = self._load_current_boost_card(boost_card)
@@ -274,6 +289,9 @@ class MangaBuffApp:
                     # Обновляем в мониторе
                     if self.monitor:
                         self.monitor.current_card_id = current_card_id
+                    
+                    # ВАЖНО: Сбрасываем состояние процессора при смене карты
+                    self.processor.reset_state()
                 else:
                     print_info("Продолжаем с текущей картой")
             
@@ -284,7 +302,7 @@ class MangaBuffApp:
             print(f"\n🎯 Обработка карты: {current_boost_card['name']} "
                   f"(ID: {current_card_id})")
             
-            # Обрабатываем владельцев
+            # Обрабатываем владельцев (передаем processor для сохранения состояния)
             total = process_owners_page_by_page(
                 session=self.session,
                 card_id=str(current_card_id),
@@ -293,6 +311,7 @@ class MangaBuffApp:
                 select_card_func=select_trade_card,
                 send_trade_func=send_trade_to_owner,
                 monitor_obj=self.monitor,
+                processor=self.processor,  # ВАЖНО: передаем существующий процессор
                 dry_run=self.args.dry_run,
                 debug=self.args.debug
             )
@@ -304,7 +323,8 @@ class MangaBuffApp:
             
             # Проверяем что произошло
             if self._should_restart():
-                # Карта изменилась - перезапускаем с новой картой
+                # Карта изменилась - сбрасываем состояние и перезапускаем с новой картой
+                self.processor.reset_state()
                 self._prepare_restart()
                 time.sleep(1)
                 continue
@@ -315,15 +335,21 @@ class MangaBuffApp:
                 boost_happened = self.wait_for_boost_or_timeout(current_card_id)
                 
                 if boost_happened:
-                    # Буст произошел - перезапускаем с новой картой
+                    # Буст произошел - сбрасываем состояние и перезапускаем с новой картой
+                    self.processor.reset_state()
                     self._prepare_restart()
                     time.sleep(1)
                     continue
                 else:
-                    # Таймаут без буста - отменяем обмены и перезапускаем
+                    # Таймаут без буста - отменяем обмены, сбрасываем состояние и перезапускаем
                     print("🔄 Отменяем все отправленные обмены...")
                     if not self.args.dry_run:
-                        success = cancel_all_sent_trades(self.session, debug=self.args.debug)
+                        # Используем trade_manager из процессора
+                        success = cancel_all_sent_trades(
+                            self.session, 
+                            self.processor.trade_manager,
+                            self.args.debug
+                        )
                         if success:
                             print_success("Все обмены отменены!")
                         else:
@@ -331,6 +357,7 @@ class MangaBuffApp:
                     else:
                         print("[DRY-RUN] Отмена обменов пропущена")
                     
+                    # ВАЖНО: Состояние уже сброшено в cancel_all_sent_trades
                     print_section(
                         "🔄 ПЕРЕЗАПУСК: Начинаем обработку ТОЙ ЖЕ карты заново",
                         char="="

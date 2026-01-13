@@ -15,7 +15,7 @@ from config import (
     MONITOR_STATUS_INTERVAL
 )
 from boost import get_boost_card_info, replace_club_card
-from trade import cancel_all_sent_trades
+from trade import cancel_all_sent_trades, TradeManager
 from daily_stats import DailyStatsManager
 from utils import save_json, load_json, print_section, print_success, print_warning
 
@@ -48,6 +48,8 @@ class BoostMonitor:
         self.boost_available = False
         self.card_changed = False
         self.current_card_id = None
+        # Создаем TradeManager для отмены обменов
+        self.trade_manager = TradeManager(session, debug=False)
     
     def check_boost_available(self) -> Optional[str]:
         """
@@ -179,7 +181,7 @@ class BoostMonitor:
             self.stats_manager.refresh_stats()
             self.stats_manager.print_stats()
             
-            # Отменяем все обмены
+            # Отменяем все обмены (с очисткой состояния)
             self._cancel_pending_trades()
             
             # Делаем паузу чтобы сервер обновил данные
@@ -243,7 +245,7 @@ class BoostMonitor:
             print(f"   Старая карта ID: {self.current_card_id}")
             print(f"   Новая карта ID: {new_card_id}\n")
             
-            # Отменяем все обмены
+            # Отменяем все обмены (с очисткой состояния)
             self._cancel_pending_trades()
             
             # Ждем обновления данных
@@ -340,7 +342,8 @@ class BoostMonitor:
         """Отменяет все отправленные обмены."""
         print("🔄 Отменяем все отправленные обмены...")
         
-        success = cancel_all_sent_trades(self.session, debug=False)
+        # Используем trade_manager для отмены (он автоматически очистит состояние)
+        success = cancel_all_sent_trades(self.session, self.trade_manager, debug=False)
         
         if success:
             print_success("Все отправленные обмены успешно отменены!")
