@@ -1,169 +1,242 @@
-"""Модуль для отслеживания дневной статистики."""
+"""Модуль для отслеживания дневной статистики с парсингом со страницы клуба."""
 
-import os
-from datetime import datetime, timedelta
-from typing import Dict, Any
+import re
+from typing import Dict, Any, Optional
+import requests
+from bs4 import BeautifulSoup
 from config import (
-    OUTPUT_DIR,
-    DAILY_STATS_FILE,
+    BASE_URL,
+    REQUEST_TIMEOUT,
     MAX_DAILY_DONATIONS,
-    MAX_DAILY_REPLACEMENTS,
-    DAILY_RESET_HOUR,
-    TIMEZONE_OFFSET
+    MAX_DAILY_REPLACEMENTS
 )
-from utils import load_json, save_json
 
 
 class DailyStatsManager:
-    """Менеджер дневной статистики."""
+    """Менеджер дневной статистики с парсингом с сайта."""
     
-    def __init__(self, output_dir: str = OUTPUT_DIR):
+    def __init__(self, session: requests.Session, boost_url: str):
         """
         Инициализация менеджера статистики.
         
         Args:
-            output_dir: Директория для файлов
+            session: Сессия requests
+            boost_url: URL страницы буста клуба
         """
-        self.output_dir = output_dir
-        self.stats_path = os.path.join(output_dir, DAILY_STATS_FILE)
+        self.session = session
+        self.boost_url = boost_url
+        self._cached_stats = None
     
-    def _get_current_date_msk(self) -> str:
-        """Получает текущую дату в МСК."""
-        # UTC время + смещение МСК
-        msk_time = datetime.utcnow() + timedelta(hours=TIMEZONE_OFFSET)
-        return msk_time.strftime("%Y-%m-%d")
-    
-    def _should_reset_stats(self, stats: Dict[str, Any]) -> bool:
+    def _parse_replacements_from_page(self, soup: BeautifulSoup) -> Optional[tuple[int, int]]:
         """
-        Проверяет, нужно ли сбросить статистику.
+        Парсит количество использованных замен со страницы.
         
         Args:
-            stats: Текущая статистика
+            soup: Объект BeautifulSoup
         
         Returns:
-            True если нужен сброс
+            Кортеж (использовано, максимум) или None
         """
-        current_date = self._get_current_date_msk()
-        last_date = stats.get("date", "")
+        try:
+            # Ищем блок с заменами: <div><span>2</span> / 10</div>
+            change_block = soup.select_one('.club-boost__change > div')
+            
+            if not change_block:
+                return None
+            
+            text = change_block.get_text(strip=True)
+            # Формат: "2 / 10"
+            match = re.search(r'(\d+)\s*/\s*(\d+)', text)
+            
+            if match:
+                used = int(match.group(1))
+                maximum = int(match.group(2))
+                return used, maximum
+            
+            return None
+            
+        except Exception as e:
+            print(f"⚠️  Ошибка парсинга замен: {e}")
+            return None
+    
+    def _parse_donations_limit(self, soup: BeautifulSoup) -> Optional[tuple[int, int]]:
+        """
+        Парсит лимит пожертвований из правил.
         
-        return current_date != last_date
-    
-    def _create_empty_stats(self) -> Dict[str, Any]:
-        """Создает пустую статистику."""
-        return {
-            "date": self._get_current_date_msk(),
-            "donations_count": 0,
-            "replacements_count": 0,
-            "last_reset": datetime.utcnow().isoformat()
-        }
-    
-    def load_stats(self) -> Dict[str, Any]:
+        Args:
+            soup: Объект BeautifulSoup
+        
+        Returns:
+            Кортеж (использовано, максимум) или None
         """
-        Загружает статистику.
+        try:
+            # Ищем текст вида "В день можно пожертвовать до 5/50 карт"
+            rules = soup.select('.club-boost__rules li')
+            
+            for rule in rules:
+                text = rule.get_text()
+                
+                # Паттерн: "до X/Y карт"
+                match = re.search(r'до\s+(\d+)/(\d+)\s+карт', text)
+                if match:
+                    used = int(match.group(1))
+                    maximum = int(match.group(2))
+                    return used, maximum
+            
+            return None
+            
+        except Exception as e:
+            print(f"⚠️  Ошибка парсинга пожертвований: {e}")
+            return None
+    
+    def fetch_stats_from_page(self) -> Optional[Dict[str, Any]]:
+        """
+        Загружает статистику со страницы клуба.
+        
+        Returns:
+            Словарь со статистикой или None
+        """
+        try:
+            response = self.session.get(self.boost_url, timeout=REQUEST_TIMEOUT)
+            
+            if response.status_code != 200:
+                print(f"⚠️  Ошибка загрузки страницы буста: {response.status_code}")
+                return None
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Парсим замены
+            replacements_data = self._parse_replacements_from_page(soup)
+            
+            if replacements_data:
+                replacements_used, replacements_max = replacements_data
+            else:
+                # Используем значения по умолчанию
+                replacements_used = 0
+                replacements_max = MAX_DAILY_REPLACEMENTS
+            
+            # Парсим пожертвования
+            donations_data = self._parse_donations_limit(soup)
+            
+            if donations_data:
+                donations_used, donations_max = donations_data
+            else:
+                # Используем значения по умолчанию
+                donations_used = 0
+                donations_max = MAX_DAILY_DONATIONS
+            
+            stats = {
+                "donations_used": donations_used,
+                "donations_max": donations_max,
+                "replacements_used": replacements_used,
+                "replacements_max": replacements_max,
+                "donations_left": donations_max - donations_used,
+                "replacements_left": replacements_max - replacements_used
+            }
+            
+            # Кэшируем
+            self._cached_stats = stats
+            
+            return stats
+            
+        except requests.RequestException as e:
+            print(f"⚠️  Ошибка сети при загрузке статистики: {e}")
+            return None
+        except Exception as e:
+            print(f"⚠️  Неожиданная ошибка при парсинге статистики: {e}")
+            return None
+    
+    def get_stats(self, force_refresh: bool = False) -> Dict[str, Any]:
+        """
+        Получает статистику (из кэша или загружает заново).
+        
+        Args:
+            force_refresh: Принудительно обновить данные
         
         Returns:
             Словарь со статистикой
         """
-        stats = load_json(self.stats_path, default=self._create_empty_stats())
+        if force_refresh or self._cached_stats is None:
+            stats = self.fetch_stats_from_page()
+            
+            if stats is None:
+                # Возвращаем значения по умолчанию при ошибке
+                return {
+                    "donations_used": 0,
+                    "donations_max": MAX_DAILY_DONATIONS,
+                    "replacements_used": 0,
+                    "replacements_max": MAX_DAILY_REPLACEMENTS,
+                    "donations_left": MAX_DAILY_DONATIONS,
+                    "replacements_left": MAX_DAILY_REPLACEMENTS
+                }
+            
+            return stats
         
-        # Проверяем, нужен ли сброс
-        if self._should_reset_stats(stats):
-            stats = self._create_empty_stats()
-            self.save_stats(stats)
-        
-        return stats
+        return self._cached_stats
     
-    def save_stats(self, stats: Dict[str, Any]) -> bool:
-        """
-        Сохраняет статистику.
-        
-        Args:
-            stats: Статистика для сохранения
-        
-        Returns:
-            True если успешно
-        """
-        return save_json(self.stats_path, stats)
-    
-    def increment_donations(self) -> bool:
-        """
-        Увеличивает счетчик пожертвований.
-        
-        Returns:
-            True если успешно
-        """
-        stats = self.load_stats()
-        stats["donations_count"] += 1
-        return self.save_stats(stats)
-    
-    def increment_replacements(self) -> bool:
-        """
-        Увеличивает счетчик замен.
-        
-        Returns:
-            True если успешно
-        """
-        stats = self.load_stats()
-        stats["replacements_count"] += 1
-        return self.save_stats(stats)
-    
-    def can_donate(self) -> bool:
+    def can_donate(self, force_refresh: bool = True) -> bool:
         """
         Проверяет, можно ли пожертвовать карту.
         
+        Args:
+            force_refresh: Обновить данные с сервера
+        
         Returns:
             True если лимит не достигнут
         """
-        stats = self.load_stats()
-        return stats["donations_count"] < MAX_DAILY_DONATIONS
+        stats = self.get_stats(force_refresh=force_refresh)
+        return stats["donations_left"] > 0
     
-    def can_replace(self) -> bool:
+    def can_replace(self, force_refresh: bool = True) -> bool:
         """
         Проверяет, можно ли заменить карту.
         
+        Args:
+            force_refresh: Обновить данные с сервера
+        
         Returns:
             True если лимит не достигнут
         """
-        stats = self.load_stats()
-        return stats["replacements_count"] < MAX_DAILY_REPLACEMENTS
+        stats = self.get_stats(force_refresh=force_refresh)
+        return stats["replacements_left"] > 0
     
-    def get_donations_left(self) -> int:
+    def get_donations_left(self, force_refresh: bool = False) -> int:
         """Возвращает оставшееся количество пожертвований."""
-        stats = self.load_stats()
-        return max(0, MAX_DAILY_DONATIONS - stats["donations_count"])
+        stats = self.get_stats(force_refresh=force_refresh)
+        return stats["donations_left"]
     
-    def get_replacements_left(self) -> int:
+    def get_replacements_left(self, force_refresh: bool = False) -> int:
         """Возвращает оставшееся количество замен."""
-        stats = self.load_stats()
-        return max(0, MAX_DAILY_REPLACEMENTS - stats["replacements_count"])
+        stats = self.get_stats(force_refresh=force_refresh)
+        return stats["replacements_left"]
     
-    def print_stats(self) -> None:
+    def print_stats(self, force_refresh: bool = False) -> None:
         """Выводит текущую статистику."""
-        stats = self.load_stats()
+        stats = self.get_stats(force_refresh=force_refresh)
         
-        print("\n📊 Дневная статистика:")
-        print(f"   Дата: {stats['date']}")
-        print(f"   Пожертвовано: {stats['donations_count']}/{MAX_DAILY_DONATIONS}")
-        print(f"   Замен карты: {stats['replacements_count']}/{MAX_DAILY_REPLACEMENTS}")
-        print(f"   Осталось пожертвований: {self.get_donations_left()}")
-        print(f"   Осталось замен: {self.get_replacements_left()}\n")
+        print("\n📊 Дневная статистика (с сервера):")
+        print(f"   Пожертвовано: {stats['donations_used']}/{stats['donations_max']}")
+        print(f"   Замен карты: {stats['replacements_used']}/{stats['replacements_max']}")
+        print(f"   Осталось пожертвований: {stats['donations_left']}")
+        print(f"   Осталось замен: {stats['replacements_left']}\n")
+    
+    def refresh_stats(self) -> None:
+        """Принудительно обновляет статистику с сервера."""
+        self.fetch_stats_from_page()
 
 
-def check_daily_limits(output_dir: str = OUTPUT_DIR) -> Dict[str, bool]:
+def create_stats_manager(
+    session: requests.Session,
+    boost_url: str
+) -> DailyStatsManager:
     """
-    Проверяет дневные лимиты.
+    Фабричная функция для создания менеджера статистики.
     
     Args:
-        output_dir: Директория для файлов
+        session: Сессия requests
+        boost_url: URL страницы буста
     
     Returns:
-        Словарь с результатами проверок
+        Экземпляр DailyStatsManager
     """
-    manager = DailyStatsManager(output_dir)
-    
-    return {
-        "can_donate": manager.can_donate(),
-        "can_replace": manager.can_replace(),
-        "donations_left": manager.get_donations_left(),
-        "replacements_left": manager.get_replacements_left()
-    }
+    return DailyStatsManager(session, boost_url)

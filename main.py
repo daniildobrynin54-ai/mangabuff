@@ -19,7 +19,7 @@ from owners_parser import process_owners_page_by_page, find_all_available_owners
 from monitor import start_boost_monitor
 from trade import send_trade_to_owner, cancel_all_sent_trades
 from card_replacement import check_and_replace_if_needed
-from daily_stats import DailyStatsManager
+from daily_stats import create_stats_manager, DailyStatsManager
 from utils import (
     ensure_dir_exists,
     save_json,
@@ -48,7 +48,7 @@ class MangaBuffApp:
         self.monitor = None
         self.output_dir = OUTPUT_DIR
         self.inventory_manager = InventoryManager(self.output_dir)
-        self.stats_manager = DailyStatsManager(self.output_dir)
+        self.stats_manager = None  # Инициализируется после получения boost_url
     
     def setup(self) -> bool:
         """
@@ -68,10 +68,29 @@ class MangaBuffApp:
             print_error("Ошибка авторизации")
             return False
         
-        print_success("Авторизация успешна")
+        print_success("Авторизация успешна\n")
         
-        # Выводим статистику
-        self.stats_manager.print_stats()
+        return True
+    
+    def init_stats_manager(self) -> bool:
+        """
+        Инициализирует менеджер статистики после получения URL буста.
+        
+        Returns:
+            True если инициализация успешна
+        """
+        if not self.args.boost_url:
+            print_warning("URL буста не указан, статистика недоступна")
+            return False
+        
+        print("📊 Инициализация менеджера статистики...")
+        self.stats_manager = create_stats_manager(
+            self.session,
+            self.args.boost_url
+        )
+        
+        # Загружаем и выводим статистику с сервера
+        self.stats_manager.print_stats(force_refresh=True)
         
         return True
     
@@ -93,7 +112,7 @@ class MangaBuffApp:
         # Сохраняем инвентарь
         if self.inventory_manager.save_inventory(inventory):
             inventory_path = self.inventory_manager.inventory_path
-            print(f"💾 Инвентарь сохранен в: {inventory_path}")
+            print(f"💾 Инвентарь сохранен в: {inventory_path}\n")
         
         return inventory
     
@@ -116,7 +135,7 @@ class MangaBuffApp:
         print_success("Карточка для вклада:")
         print(f"   {format_card_info(boost_card)}")
         
-        # НОВОЕ: Проверяем, нужна ли автозамена
+        # Проверяем, нужна ли автозамена
         if boost_card.get('needs_replacement', False):
             print_warning(f"\n⚠️  Карта требует замены!")
             print(f"   Владельцев: {boost_card.get('owners_count', '?')}")
@@ -126,7 +145,7 @@ class MangaBuffApp:
                 self.session,
                 self.args.boost_url,
                 boost_card,
-                self.output_dir
+                self.stats_manager
             )
             
             # Если замена успешна - используем новую карту
@@ -153,6 +172,7 @@ class MangaBuffApp:
         self.monitor = start_boost_monitor(
             self.session,
             self.args.boost_url,
+            self.stats_manager,
             self.output_dir
         )
         
@@ -235,7 +255,7 @@ class MangaBuffApp:
             current_boost_card = self._load_current_boost_card(boost_card)
             current_card_id = current_boost_card['card_id']
             
-            # НОВОЕ: Проверяем автозамену перед началом обработки
+            # Проверяем автозамену перед началом обработки
             if current_boost_card.get('needs_replacement', False):
                 print_warning(f"\n⚠️  Карта требует автозамены перед обработкой!")
                 
@@ -243,7 +263,7 @@ class MangaBuffApp:
                     self.session,
                     self.args.boost_url,
                     current_boost_card,
-                    self.output_dir
+                    self.stats_manager
                 )
                 
                 if new_card:
@@ -372,6 +392,11 @@ class MangaBuffApp:
         if not self.setup():
             return 1
         
+        # Инициализация менеджера статистики (если есть boost_url)
+        if self.args.boost_url:
+            if not self.init_stats_manager():
+                print_warning("Работа без менеджера статистики")
+        
         # Загрузка инвентаря
         inventory = self.load_inventory()
         
@@ -411,21 +436,21 @@ def create_argument_parser() -> argparse.ArgumentParser:
 
   # Загрузить инвентарь и обработать владельцев
   python main.py --email user@example.com --password pass123 \\
-                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/123/boost
+                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/klub-taro-2/boost
 
   # Только вывести список владельцев
   python main.py --email user@example.com --password pass123 \\
-                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/123/boost \\
+                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/klub-taro-2/boost \\
                  --only_list_owners
 
   # Тестовый режим (без реальных обменов)
   python main.py --email user@example.com --password pass123 \\
-                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/123/boost \\
+                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/klub-taro-2/boost \\
                  --dry_run
 
   # С мониторингом буста и автозаменой карт
   python main.py --email user@example.com --password pass123 \\
-                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/123/boost \\
+                 --user_id 12345 --boost_url https://mangabuff.ru/clubs/klub-taro-2/boost \\
                  --enable_monitor
         """
     )

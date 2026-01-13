@@ -27,6 +27,7 @@ class BoostMonitor:
         self,
         session: requests.Session,
         club_url: str,
+        stats_manager: DailyStatsManager,
         output_dir: str = OUTPUT_DIR
     ):
         """
@@ -35,17 +36,18 @@ class BoostMonitor:
         Args:
             session: Сессия requests
             club_url: URL страницы клуба
+            stats_manager: Менеджер статистики
             output_dir: Директория для файлов
         """
         self.session = session
         self.club_url = club_url
         self.output_dir = output_dir
+        self.stats_manager = stats_manager
         self.running = False
         self.thread = None
         self.boost_available = False
         self.card_changed = False
         self.current_card_id = None
-        self.stats_manager = DailyStatsManager(output_dir)
     
     def check_boost_available(self) -> Optional[str]:
         """
@@ -82,7 +84,7 @@ class BoostMonitor:
     
     def check_card_changed(self) -> Optional[int]:
         """
-        НОВОЕ: Проверяет, изменилась ли карта в клубе.
+        Проверяет, изменилась ли карта в клубе.
         
         Returns:
             Новый card_id если карта изменилась, иначе None
@@ -140,8 +142,8 @@ class BoostMonitor:
         Returns:
             True если успешно
         """
-        # НОВОЕ: Проверяем лимит пожертвований
-        if not self.stats_manager.can_donate():
+        # Обновляем и проверяем лимит пожертвований с сервера
+        if not self.stats_manager.can_donate(force_refresh=True):
             print_warning(f"⛔ Достигнут дневной лимит пожертвований!")
             self.stats_manager.print_stats()
             return False
@@ -173,8 +175,8 @@ class BoostMonitor:
             
             print_success("Карта успешно внесена в клуб!")
             
-            # НОВОЕ: Увеличиваем счетчик пожертвований
-            self.stats_manager.increment_donations()
+            # Обновляем статистику с сервера
+            self.stats_manager.refresh_stats()
             self.stats_manager.print_stats()
             
             # Отменяем все обмены
@@ -227,7 +229,7 @@ class BoostMonitor:
     
     def handle_card_change_without_boost(self, new_card_id: int) -> bool:
         """
-        НОВОЕ: Обрабатывает изменение карты в клубе без буста.
+        Обрабатывает изменение карты в клубе без буста.
         
         Args:
             new_card_id: ID новой карты
@@ -352,15 +354,15 @@ class BoostMonitor:
         print("   Отслеживание: буст + смена карты в клубе")
         print("   Нажмите Ctrl+C для остановки\n")
         
-        # Выводим статистику при старте
-        self.stats_manager.print_stats()
+        # Выводим статистику при старте (обновляем с сервера)
+        self.stats_manager.print_stats(force_refresh=True)
         
         check_count = 0
         
         while self.running:
             check_count += 1
             
-            # НОВОЕ: Проверяем смену карты в клубе
+            # Проверяем смену карты в клубе
             new_card_id = self.check_card_changed()
             if new_card_id:
                 self.handle_card_change_without_boost(new_card_id)
@@ -423,6 +425,7 @@ class BoostMonitor:
 def start_boost_monitor(
     session: requests.Session,
     club_url: str,
+    stats_manager: DailyStatsManager,
     output_dir: str = OUTPUT_DIR
 ) -> BoostMonitor:
     """
@@ -431,11 +434,12 @@ def start_boost_monitor(
     Args:
         session: Сессия requests
         club_url: URL страницы клуба
+        stats_manager: Менеджер статистики
         output_dir: Директория для файлов
     
     Returns:
         Объект BoostMonitor
     """
-    monitor = BoostMonitor(session, club_url, output_dir)
+    monitor = BoostMonitor(session, club_url, stats_manager, output_dir)
     monitor.start()
     return monitor

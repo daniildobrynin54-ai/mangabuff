@@ -17,7 +17,7 @@ class CardReplacementManager:
         self,
         session: requests.Session,
         boost_url: str,
-        output_dir: str = OUTPUT_DIR
+        stats_manager: DailyStatsManager
     ):
         """
         Инициализация менеджера.
@@ -25,11 +25,11 @@ class CardReplacementManager:
         Args:
             session: Сессия requests
             boost_url: URL страницы буста
-            output_dir: Директория для файлов
+            stats_manager: Менеджер статистики
         """
         self.session = session
         self.boost_url = boost_url
-        self.stats_manager = DailyStatsManager(output_dir)
+        self.stats_manager = stats_manager
     
     def should_replace_card(self, boost_card: dict) -> bool:
         """
@@ -57,12 +57,12 @@ class CardReplacementManager:
     
     def can_replace(self) -> bool:
         """
-        Проверяет, можно ли выполнить замену.
+        Проверяет, можно ли выполнить замену (обновляет данные с сервера).
         
         Returns:
             True если лимит не достигнут
         """
-        if not self.stats_manager.can_replace():
+        if not self.stats_manager.can_replace(force_refresh=True):
             print_warning(f"⛔ Достигнут дневной лимит замен карт!")
             self.stats_manager.print_stats()
             return False
@@ -93,7 +93,10 @@ class CardReplacementManager:
         
         print(f"   Текущая карта: {old_card_name} (ID: {old_card_id})")
         print(f"   Владельцев: {owners} (порог: {MAX_CLUB_CARD_OWNERS})")
-        print(f"   Замен осталось сегодня: {self.stats_manager.get_replacements_left()}\n")
+        
+        # Показываем актуальную статистику
+        replacements_left = self.stats_manager.get_replacements_left(force_refresh=True)
+        print(f"   Замен осталось сегодня: {replacements_left}\n")
         
         # Отменяем обмены перед заменой
         print("1️⃣ Отменяем все отправленные обмены...")
@@ -111,15 +114,16 @@ class CardReplacementManager:
         
         print_success("✅ Запрос на замену отправлен!")
         
-        # Увеличиваем счетчик замен
-        self.stats_manager.increment_replacements()
-        
         # Ждем обновления данных
         print("3️⃣ Ожидание обновления данных (3 сек)...")
         time.sleep(3)
         
+        # Обновляем статистику с сервера
+        print("4️⃣ Обновляем статистику с сервера...")
+        self.stats_manager.refresh_stats()
+        
         # Загружаем информацию о новой карте
-        print("4️⃣ Загружаем информацию о новой карте...")
+        print("5️⃣ Загружаем информацию о новой карте...")
         new_boost_card = get_boost_card_info(self.session, self.boost_url)
         
         if not new_boost_card:
@@ -137,14 +141,17 @@ class CardReplacementManager:
             print(f"\n   Старая: {old_card_name} (ID: {old_card_id}, владельцев: {owners})")
             print(f"   Новая: {new_card_name} (ID: {new_card_id}, владельцев: {new_owners})\n")
             
-            # Выводим обновленную статистику
-            self.stats_manager.print_stats()
+            # Выводим обновленную статистику с сервера
+            self.stats_manager.print_stats(force_refresh=True)
             print("=" * 60 + "\n")
             
             return new_boost_card
         else:
             print_warning(f"⚠️  Карта не изменилась (ID: {old_card_id})")
             print("   Возможно, замена не сработала или вернулась та же карта\n")
+            
+            # Все равно обновляем статистику
+            self.stats_manager.print_stats(force_refresh=True)
             print("=" * 60 + "\n")
             return None
 
@@ -153,7 +160,7 @@ def check_and_replace_if_needed(
     session: requests.Session,
     boost_url: str,
     boost_card: dict,
-    output_dir: str = OUTPUT_DIR
+    stats_manager: DailyStatsManager
 ) -> Optional[dict]:
     """
     Проверяет карту и заменяет её если нужно.
@@ -162,10 +169,10 @@ def check_and_replace_if_needed(
         session: Сессия requests
         boost_url: URL страницы буста
         boost_card: Информация о текущей карте
-        output_dir: Директория для файлов
+        stats_manager: Менеджер статистики
     
     Returns:
         Новая карта если была замена, иначе None
     """
-    manager = CardReplacementManager(session, boost_url, output_dir)
+    manager = CardReplacementManager(session, boost_url, stats_manager)
     return manager.perform_replacement(boost_card)
