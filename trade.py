@@ -391,83 +391,39 @@ def send_trade_to_owner(
     session: requests.Session,
     owner_id: int,
     owner_name: str,
-    my_card: Dict[str, Any],
-    his_card_id: int,
+    my_instance_id: int,  # ✅ просто ID, не весь объект
+    his_instance_id: int,  # ✅ уже известен из boost_card
     trade_manager: Optional[TradeManager] = None,
     dry_run: bool = True,
     debug: bool = False
 ) -> bool:
-    """
-    Отправляет обмен конкретному владельцу.
+    """Отправляет обмен без лишних поисков."""
     
-    Args:
-        session: Сессия requests
-        owner_id: ID владельца
-        owner_name: Имя владельца
-        my_card: Информация о моей карте
-        his_card_id: ID карточки в клубе
-        trade_manager: Менеджер обменов (для отслеживания состояния)
-        dry_run: Тестовый режим
-        debug: Режим отладки
-    
-    Returns:
-        True если обмен отправлен успешно
-    """
-    my_instance_id = my_card.get("instance_id")
-    my_card_name = my_card.get("name", "")
-    my_card_id = my_card.get("card_id", 0)
-    my_wanters = my_card.get("wanters_count", 0)
-    
-    if not my_instance_id:
-        if debug:
-            print(f"[TRADE] Missing instance_id for my card")
-        return False
-    
-    # Создаем менеджер если не передан
     if not trade_manager:
         trade_manager = TradeManager(session, debug)
     
-    # Проверяем, не был ли уже отправлен обмен
-    if not dry_run and trade_manager.has_trade_sent(owner_id, his_card_id):
-        if debug:
-            print(f"[TRADE] Обмен уже был отправлен {owner_name} (ID: {owner_id})")
+    # Проверка дубликата
+    if not dry_run and trade_manager.has_trade_sent(owner_id, his_instance_id):
         print(f"⏭️  Обмен уже отправлен → {owner_name}")
         return False
     
-    # Dry-run режим
+    # Dry-run
     if dry_run:
         print(f"[DRY-RUN] 📤 Обмен → {owner_name} (ID: {owner_id})")
-        print(f"           Моя карта: {my_card_name} (ID: {my_card_id}, желающих: {my_wanters})")
-        print(f"           Instance ID: {my_instance_id} ↔ card_id: {his_card_id}")
+        print(f"           {my_instance_id} ↔ {his_instance_id}")
         return True
     
-    # Находим instance_id карточки у владельца
-    if debug:
-        print(f"[TRADE] Поиск instance_id карты {his_card_id} у владельца {owner_id}...")
-    
-    his_instance_id = trade_manager.find_partner_card_instance(owner_id, his_card_id)
-    
-    if not his_instance_id:
-        if debug:
-            print(f"[TRADE] Не найден instance_id карты {his_card_id}")
-        print(f"❌ Карта не найдена у {owner_name}")
-        return False
-    
-    if debug:
-        print(f"[TRADE] Найден instance_id: {his_instance_id}")
-    
-    # Отправляем обмен с повторными попытками
+    # ✅ Сразу создаем обмен БЕЗ поиска
     success = trade_manager.create_trade(
         owner_id, 
         my_instance_id, 
         his_instance_id,
-        max_retries=2  # 2 попытки при ошибке
+        max_retries=2
     )
     
     if success:
-        # Отмечаем обмен как отправленный
-        trade_manager.mark_trade_sent(owner_id, his_card_id)
-        print(f"✅ Обмен отправлен → {owner_name} | Моя карта: {my_card_name} ({my_wanters} желающих)")
+        trade_manager.mark_trade_sent(owner_id, his_instance_id)
+        print(f"✅ Обмен отправлен → {owner_name}")
     else:
         print(f"❌ Ошибка отправки → {owner_name}")
     
