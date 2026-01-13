@@ -1,4 +1,4 @@
-"""Модуль для работы с обменами с кэшированием отправленных карт."""
+"""Модуль для работы с обменами с подробными логами удаления карт."""
 
 import json
 import time
@@ -17,7 +17,7 @@ from rate_limiter import get_rate_limiter
 
 
 class TradeHistoryMonitor:
-    """Монитор истории обменов."""
+    """Монитор истории обменов с подробными логами."""
     
     def __init__(
         self,
@@ -93,10 +93,13 @@ class TradeHistoryMonitor:
         trades = self.fetch_recent_trades()
         
         if not trades:
+            self._log("Нет новых обменов в истории")
             return 0
         
         removed_count = 0
         new_traded_cards = set()
+        
+        self._log(f"Проверка истории: найдено {len(trades)} записей")
         
         for trade in trades:
             trade_id = trade['trade_id']
@@ -112,16 +115,33 @@ class TradeHistoryMonitor:
                             removed_count += 1
                             self.traded_away_cards.add(card_id)
                             print(f"🗑️  Карта {card_id} удалена из инвентаря")
+                        else:
+                            self._log(f"  Не удалось удалить карту {card_id}")
                 
                 new_traded_cards.add(trade_id)
+            else:
+                self._log(f"Обмен {trade_id} уже обработан ранее")
         
         self.last_trade_ids.update(new_traded_cards)
+        
+        if removed_count > 0:
+            self._log(f"✅ Успешно удалено карт: {removed_count}")
+        else:
+            self._log("Нет карт для удаления")
+        
         return removed_count
     
     def _remove_card_from_inventory(self, card_id: int) -> bool:
         """Удаляет карту из инвентаря по card_id."""
         try:
+            self._log(f"Попытка удаления карты {card_id} из инвентаря...")
             inventory = self.inventory_manager.load_inventory()
+            
+            if not inventory:
+                self._log(f"Инвентарь пуст или не загружен")
+                return False
+            
+            self._log(f"Загружен инвентарь: {len(inventory)} карт")
             
             cards_to_remove = []
             for card in inventory:
@@ -131,21 +151,29 @@ class TradeHistoryMonitor:
                 
                 if c_id == card_id:
                     cards_to_remove.append(card)
+                    self._log(f"Найдена карта для удаления: card_id={card_id}")
             
             if not cards_to_remove:
                 self._log(f"Карта {card_id} не найдена в инвентаре")
                 return False
             
+            self._log(f"Найдено карт с ID {card_id}: {len(cards_to_remove)}")
+            
             inventory.remove(cards_to_remove[0])
             success = self.inventory_manager.save_inventory(inventory)
             
             if success:
-                self._log(f"✅ Карта {card_id} удалена из инвентаря")
+                self._log(f"✅ Карта {card_id} удалена из инвентаря ({len(inventory)} осталось)")
+            else:
+                self._log(f"❌ Не удалось сохранить инвентарь после удаления")
             
             return success
             
         except Exception as e:
             self._log(f"Ошибка удаления карты {card_id}: {e}")
+            import traceback
+            if self.debug:
+                traceback.print_exc()
             return False
     
     def monitor_loop(self, check_interval: int = 10):
@@ -156,13 +184,26 @@ class TradeHistoryMonitor:
         self.last_trade_ids = {t['trade_id'] for t in initial_trades}
         self._log(f"Начальное состояние: {len(self.last_trade_ids)} обменов")
         
+        check_count = 0
+        
         while self.running:
             try:
+                check_count += 1
+                self._log(f"Проверка истории #{check_count}")
+                
                 removed = self.check_and_remove_traded_cards()
+                
                 if removed > 0:
-                    self._log(f"Удалено карт: {removed}")
+                    self._log(f"✅ Удалено карт в этой проверке: {removed}")
+                    print(f"[HISTORY] ✅ Удалено карт: {removed}")
+                else:
+                    self._log(f"Нет изменений в истории")
+                    
             except Exception as e:
                 self._log(f"Ошибка в цикле: {e}")
+                if self.debug:
+                    import traceback
+                    traceback.print_exc()
             
             time.sleep(check_interval)
     
@@ -196,19 +237,23 @@ class TradeHistoryMonitor:
     
     def force_check(self) -> int:
         """Принудительная проверка."""
-        return self.check_and_remove_traded_cards()
+        self._log("🔍 Принудительная проверка истории обменов...")
+        removed = self.check_and_remove_traded_cards()
+        if removed > 0:
+            self._log(f"✅ Принудительная проверка: удалено {removed} карт")
+            print(f"[HISTORY] ✅ Принудительная проверка: удалено {removed} карт")
+        else:
+            self._log("Принудительная проверка: изменений нет")
+        return removed
 
 
 class TradeManager:
-    """Менеджер обменов с кэшированием отправленных карт."""
+    """Менеджер обменов с исправленным поиском карт."""
     
     def __init__(self, session, debug: bool = False):
         self.session = session
         self.debug = debug
-        # Отслеживание пар (owner_id, his_card_id)
         self.sent_trades: Set[tuple[int, int]] = set()
-        # ✅ Отслеживание отправленных своих карт (instance_id)
-        self.locked_my_cards: Set[int] = set()
         self.limiter = get_rate_limiter()
     
     def _log(self, message: str) -> None:
@@ -271,7 +316,16 @@ class TradeManager:
         partner_id: int,
         card_id: int
     ) -> Optional[int]:
-        """Поиск instance_id карты партнера."""
+        """
+        Поиск instance_id с правильным offset.
+        
+        Args:
+            partner_id: ID партнера
+            card_id: ID карточки
+        
+        Returns:
+            Instance ID или None
+        """
         self._log(f"🔍 Поиск instance_id карты {card_id} у владельца {partner_id}...")
         
         try:
@@ -402,29 +456,8 @@ class TradeManager:
             self._log(f"❌ Ошибка сети: {e}")
             return False
     
-    def is_my_card_locked(self, my_instance_id: int) -> bool:
-        """Проверяет, заблокирована ли своя карта."""
-        return my_instance_id in self.locked_my_cards
-    
-    def lock_my_card(self, my_instance_id: int) -> None:
-        """Блокирует свою карту (отправлена в обмен)."""
-        self.locked_my_cards.add(my_instance_id)
-        self._log(f"🔒 Карта заблокирована: instance_id={my_instance_id}")
-    
-    def unlock_all_my_cards(self) -> None:
-        """Разблокирует все свои карты (после отмены обменов)."""
-        count = len(self.locked_my_cards)
-        self.locked_my_cards.clear()
-        self._log(f"🔓 Разблокировано карт: {count}")
-        if count > 0:
-            print(f"🔓 Разблокировано {count} карт(ы) для повторной отправки")
-    
-    def get_locked_cards_count(self) -> int:
-        """Возвращает количество заблокированных карт."""
-        return len(self.locked_my_cards)
-    
     def has_trade_sent(self, receiver_id: int, card_id: int) -> bool:
-        """Проверяет, был ли отправлен обмен этому владельцу."""
+        """Проверяет, был ли отправлен обмен."""
         return (receiver_id, card_id) in self.sent_trades
     
     def mark_trade_sent(self, receiver_id: int, card_id: int) -> None:
@@ -433,7 +466,7 @@ class TradeManager:
         self._log(f"Обмен помечен: owner={receiver_id}, card_id={card_id}")
     
     def clear_sent_trades(self) -> None:
-        """Очищает список отправленных обменов (пары владелец-карта)."""
+        """Очищает список отправленных обменов."""
         count = len(self.sent_trades)
         self.sent_trades.clear()
         self._log(f"Список обменов очищен ({count} записей)")
@@ -464,17 +497,13 @@ class TradeManager:
             
             if response.status_code == 200:
                 self.clear_sent_trades()
-                self.unlock_all_my_cards()
-                
                 time.sleep(2)
                 
                 if history_monitor:
-                    self._log("Проверка истории обменов...")
+                    self._log("Проверка истории...")
                     removed = history_monitor.force_check()
                     if removed > 0:
-                        print(f"🗑️  Удалено {removed} карт(ы) из инвентаря (успешные обмены)")
-                    else:
-                        print(f"ℹ️  Успешных обменов не обнаружено")
+                        print(f"🗑️  Удалено {removed} карт(ы) из инвентаря")
                 
                 return True
             
@@ -512,12 +541,6 @@ def send_trade_to_owner(
         print(f"⏭️  Обмен уже отправлен → {owner_name}")
         return False
     
-    if not dry_run and trade_manager.is_my_card_locked(my_instance_id):
-        if debug:
-            print(f"[TRADE] Карта уже используется в обмене: {my_instance_id}")
-        print(f"🔒 Карта занята → {owner_name}")
-        return False
-    
     if dry_run:
         print(f"[DRY-RUN] 📤 Обмен → {owner_name}")
         return True
@@ -536,7 +559,6 @@ def send_trade_to_owner(
     
     if success:
         trade_manager.mark_trade_sent(owner_id, his_card_id)
-        trade_manager.lock_my_card(my_instance_id)
         print(f"✅ Обмен отправлен → {owner_name} | {my_card_name} ({my_wanters} желающих)")
     else:
         print(f"❌ Ошибка → {owner_name}")

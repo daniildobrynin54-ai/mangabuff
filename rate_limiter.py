@@ -38,6 +38,7 @@ class RateLimiter:
         self.requests = deque()
         self.lock = threading.Lock()
         self.paused_until = 0  # Timestamp когда можно возобновить
+        self.log_threshold = 6.0  # 🔧 НОВОЕ: Порог для вывода логов (секунды)
     
     def _cleanup_old_requests(self) -> None:
         """Удаляет запросы старше окна."""
@@ -66,7 +67,9 @@ class RateLimiter:
                 wait_time = (oldest + self.window_seconds) - time.time()
                 
                 if wait_time > 0:
-                    print(f"⏳ Rate limit: waiting {wait_time:.1f}s")
+                    # 🔧 ИСПРАВЛЕНО: Выводим только если ожидание > порога
+                    if wait_time >= self.log_threshold:
+                        print(f"⏳ Rate limit: waiting {wait_time:.1f}s")
                     time.sleep(wait_time)
                     self._cleanup_old_requests()
     

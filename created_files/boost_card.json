@@ -1,11 +1,21 @@
 {
-  "name": "Гора",
-  "id": 380597422,
-  "card_id": 294033,
+  "name": "Замок",
+  "id": 384486526,
+  "card_id": 106077,
   "rank": "E",
-  "wanters_count": 7,
-  "owners_count": 221,
-  "card_url": "https://mangabuff.ru/cards/294033/users",
-  "timestamp": 1768327008.3536348,
-  "needs_replacement": false
+  "wanters_count": 13,
+  "owners_count": 1098,
+  "card_url": "https://mangabuff.ru/cards/106077/users",
+  "timestamp": 1768331556.6835504,
+  "needs_replacement": false,
+  "club_members": [
+    {
+      "user_id": "101264",
+      "nickname": "LTM I Sirenika"
+    },
+    {
+      "user_id": "295744",
+      "nickname": "Heiress"
+    }
+  ]
 }

@@ -1,4 +1,4 @@
-"""Мониторинг страницы буста клуба."""
+"""Мониторинг страницы буста клуба с информацией об участниках."""
 
 import os
 import threading
@@ -14,7 +14,7 @@ from config import (
     MONITOR_CHECK_INTERVAL,
     MONITOR_STATUS_INTERVAL
 )
-from boost import get_boost_card_info, replace_club_card
+from boost import get_boost_card_info, replace_club_card, format_club_members_info
 from trade import cancel_all_sent_trades, TradeManager
 from daily_stats import DailyStatsManager
 from utils import save_json, load_json, print_section, print_success, print_warning
@@ -286,7 +286,9 @@ class BoostMonitor:
         save_json(filepath, boost_card)
     
     def _print_card_info(self, boost_card: dict, instance_id: int, is_new: bool = False) -> None:
-        """Выводит информацию о карте."""
+        """
+        🔧 ОБНОВЛЕНО: Выводит информацию о карте с участниками клуба.
+        """
         if is_new:
             print_section("🎁 НОВАЯ КАРТА ДЛЯ ВКЛАДА!")
         else:
@@ -301,6 +303,11 @@ class BoostMonitor:
         print(f"   Название: {name}")
         print(f"   ID карты: {card_id} | Instance ID: {instance_id} | Ранг: {rank}")
         print(f"   Владельцев: {owners} | Желающих: {wanters}")
+        
+        # 🆕 НОВОЕ: Выводим информацию об участниках клуба
+        club_members = boost_card.get('club_members', [])
+        members_info = format_club_members_info(club_members)
+        print(f"   {members_info}")
         
         if is_new:
             filepath = os.path.join(self.output_dir, BOOST_CARD_FILE)

@@ -22,7 +22,13 @@ class Owner:
     """Класс владельца карты."""
     
     def __init__(self, owner_id: str, name: str):
-        """Инициализация владельца."""
+        """
+        Инициализация владельца.
+        
+        Args:
+            owner_id: ID владельца
+            name: Имя владельца
+        """
         self.id = owner_id
         self.name = name
     
@@ -35,7 +41,12 @@ class OwnersParser:
     """Парсер для поиска владельцев карт."""
     
     def __init__(self, session: requests.Session):
-        """Инициализация парсера."""
+        """
+        Инициализация парсера.
+        
+        Args:
+            session: Сессия requests
+        """
         self.session = session
     
     def _extract_user_id(self, owner_element) -> Optional[str]:
@@ -50,12 +61,20 @@ class OwnersParser:
         return name_elem.get_text(strip=True) if name_elem else "Неизвестно"
     
     def _is_owner_available(self, owner_element) -> bool:
-        """Проверяет, доступен ли владелец для обмена."""
+        """
+        Проверяет, доступен ли владелец для обмена.
+        
+        Владелец доступен если:
+        - Онлайн
+        - Нет замка (lock)
+        """
         owner_classes = owner_element.get('class', [])
         
+        # Проверяем онлайн статус
         if 'card-show__owner--online' not in owner_classes:
             return False
         
+        # Проверяем отсутствие замка
         lock_icons = owner_element.select('.card-show__owner-icon .icon-lock')
         if lock_icons:
             return False
@@ -67,7 +86,16 @@ class OwnersParser:
         card_id: str,
         page: int = 1
     ) -> Tuple[List[Owner], bool]:
-        """Находит владельцев карты на конкретной странице."""
+        """
+        Находит владельцев карты на конкретной странице.
+        
+        Args:
+            card_id: ID карты
+            page: Номер страницы
+        
+        Returns:
+            Кортеж (список владельцев, есть ли следующая страница)
+        """
         url = f"{BASE_URL}/cards/{card_id}/users"
         if page > 1:
             url += f"?page={page}"
@@ -84,16 +112,20 @@ class OwnersParser:
             if not owner_elements:
                 return [], False
             
+            # На первой странице пропускаем первых N владельцев
             start_index = FIRST_PAGE_SKIP_OWNERS if page == 1 else 0
             available_owners = []
             
             for idx, owner_elem in enumerate(owner_elements):
+                # Пропускаем первых владельцев на первой странице
                 if page == 1 and idx < start_index:
                     continue
                 
+                # Проверяем доступность
                 if not self._is_owner_available(owner_elem):
                     continue
                 
+                # Извлекаем данные
                 user_id = self._extract_user_id(owner_elem)
                 if not user_id:
                     continue
@@ -101,6 +133,7 @@ class OwnersParser:
                 user_name = self._extract_user_name(owner_elem)
                 available_owners.append(Owner(user_id, user_name))
             
+            # Проверяем наличие следующей страницы
             has_next = self._has_next_page(soup)
             
             return available_owners, has_next
@@ -120,7 +153,15 @@ class OwnersParser:
         return False
     
     def find_all_owners(self, card_id: str) -> List[Owner]:
-        """Находит всех доступных владельцев карты."""
+        """
+        Находит всех доступных владельцев карты.
+        
+        Args:
+            card_id: ID карты
+        
+        Returns:
+            Список всех доступных владельцев
+        """
         all_owners = []
         page = 1
         
@@ -161,7 +202,16 @@ class OwnersProcessor:
         dry_run: bool = True,
         debug: bool = False
     ):
-        """Инициализация процессора."""
+        """
+        Инициализация процессора.
+        
+        Args:
+            session: Сессия requests
+            select_card_func: Функция подбора карты
+            send_trade_func: Функция отправки обмена
+            dry_run: Тестовый режим
+            debug: Режим отладки
+        """
         self.session = session
         self.parser = OwnersParser(session)
         self.select_card_func = select_card_func
@@ -169,6 +219,7 @@ class OwnersProcessor:
         self.dry_run = dry_run
         self.debug = debug
         self.last_trade_time = 0.0
+        # Создаем единый TradeManager для отслеживания отправленных обменов
         self.trade_manager = TradeManager(session, debug) if not dry_run else None
     
     def reset_state(self) -> None:
@@ -205,24 +256,37 @@ class OwnersProcessor:
         total: int,
         monitor_obj=None
     ) -> tuple[bool, bool]:
-        """Обрабатывает одного владельца."""
+        """
+        Обрабатывает одного владельца.
+        
+        Returns:
+            Кортеж (успех обмена, нужно прервать обработку)
+        """
+        # 🔧 КРИТИЧНО: Проверяем изменение карты ПЕРЕД обработкой
         if monitor_obj and monitor_obj.card_changed:
             print(f"\n⚠️  Карта изменилась! Прерываем обработку владельца {owner.name}")
+            return False, True  # Не успешно, прервать
+        
+        # 🆕 НОВОЕ: Проверяем процесс внесения карты
+        if monitor_obj and hasattr(monitor_obj, 'boost_in_progress') and monitor_obj.boost_in_progress:
+            print(f"\n⚠️  Обнаружено внесение карты! Прерываем обработку владельца {owner.name}")
+            return False, True  # Не успешно, прервать
+        
+        # 🔧 НОВОЕ: Проверяем актуальность card_id
+        current_card_id = boost_card.get('card_id')
+        if current_card_id != his_card_id:
+            print(f"\n⚠️  ID карты изменился ({his_card_id} → {current_card_id})! Прерываем.")
             return False, True
         
+        # Подбираем карту
         selected_card = self.select_card_func(
             self.session,
             boost_card,
-            output_dir,
-            trade_manager=self.trade_manager
+            output_dir
         )
         
         if not selected_card:
             print(f"   [{index}/{total}] {owner.name} → ❌ Не удалось подобрать карту")
-            if self.trade_manager:
-                locked_count = self.trade_manager.get_locked_cards_count()
-                if locked_count > 0:
-                    print(f"      ℹ️  Заблокировано карт: {locked_count}")
             return False, False
         
         card_name = selected_card.get('name', '')
@@ -231,6 +295,7 @@ class OwnersProcessor:
         
         print(f"   [{index}/{total}] {owner.name} → {card_name} ({wanters} желающих)")
         
+        # Если нет функции отправки - пропускаем
         if not self.send_trade_func:
             print(f"      ⚠️  Функция отправки не передана")
             return False, False
@@ -239,12 +304,26 @@ class OwnersProcessor:
             print(f"      ⚠️  Не найден instance_id выбранной карты")
             return False, False
         
+        # Ждем перед обменом
         self._wait_before_trade()
         
+        # 🔧 КРИТИЧНО: Проверяем снова перед отправкой обмена
         if monitor_obj and monitor_obj.card_changed:
             print(f"\n⚠️  Карта изменилась! Прерываем перед отправкой обмена")
+            return False, True  # Не успешно, прервать
+        
+        # 🆕 НОВОЕ: Проверяем процесс внесения карты перед отправкой
+        if monitor_obj and hasattr(monitor_obj, 'boost_in_progress') and monitor_obj.boost_in_progress:
+            print(f"\n⚠️  Обнаружено внесение карты! Прерываем перед отправкой обмена")
+            return False, True  # Не успешно, прервать
+        
+        # 🔧 НОВОЕ: Финальная проверка card_id
+        current_card_id = boost_card.get('card_id')
+        if current_card_id != his_card_id:
+            print(f"\n⚠️  ID карты изменился перед отправкой! Прерываем.")
             return False, True
         
+        # Передаем his_card_id (а не instance_id)
         success = self.send_trade_func(
             session=self.session,
             owner_id=int(owner.id),
@@ -275,7 +354,18 @@ class OwnersProcessor:
         output_dir: str,
         monitor_obj=None
     ) -> int:
-        """Обрабатывает владельцев постранично."""
+        """
+        Обрабатывает владельцев постранично.
+        
+        Args:
+            card_id: ID карты
+            boost_card: Информация о буст-карте
+            output_dir: Директория для файлов
+            monitor_obj: Объект монитора
+        
+        Returns:
+            Количество обработанных владельцев
+        """
         total_processed = 0
         total_trades_sent = 0
         page = 1
@@ -284,16 +374,20 @@ class OwnersProcessor:
         print(f"📊 Режим: {'DRY-RUN (тестовый)' if self.dry_run else 'БОЕВОЙ (реальные обмены)'}\n")
         
         while True:
+            # Проверяем изменение карты через монитор ПЕРЕД парсингом страницы
             if monitor_obj and monitor_obj.card_changed:
                 print("\n🔄 Обнаружена новая карта! Прерываем обработку страницы...")
                 return total_processed
             
+            # Парсим страницу
             owners, has_next = self.parser.find_owners_on_page(card_id, page)
             
             if owners:
                 print(f"📊 Страница {page}: найдено владельцев - {len(owners)}")
                 
+                # Обрабатываем каждого владельца
                 for idx, owner in enumerate(owners, 1):
+                    # Обрабатываем владельца
                     success, should_break = self.process_owner(
                         owner,
                         boost_card,
@@ -304,6 +398,7 @@ class OwnersProcessor:
                         monitor_obj
                     )
                     
+                    # Если нужно прервать - немедленно выходим
                     if should_break:
                         print("\n🔄 Прерывание обработки для перезапуска с новой картой...")
                         return total_processed
@@ -312,20 +407,23 @@ class OwnersProcessor:
                         total_trades_sent += 1
                 
                 total_processed += len(owners)
-                print()
+                print()  # Пустая строка для разделения
             else:
                 print(f"📊 Страница {page}: подходящих владельцев - 0\n")
             
+            # Проверяем наличие следующей страницы
             if not has_next:
                 print(f"✅ Обработка завершена:")
                 print(f"   Проверено владельцев: {total_processed}")
                 print(f"   Отправлено обменов: {total_trades_sent}")
                 break
             
+            # Проверяем изменение карты ПЕРЕД переходом к следующей странице
             if monitor_obj and monitor_obj.card_changed:
                 print("\n🔄 Обнаружена новая карта! Прерываем перед следующей страницей...")
                 return total_processed
             
+            # Задержка перед следующей страницей
             time.sleep(PAGE_DELAY)
             page += 1
         
@@ -344,7 +442,25 @@ def process_owners_page_by_page(
     dry_run: bool = True,
     debug: bool = False
 ) -> int:
-    """Удобная функция для постраничной обработки владельцев."""
+    """
+    Удобная функция для постраничной обработки владельцев.
+    
+    Args:
+        session: Сессия requests
+        card_id: ID карты
+        boost_card: Информация о буст-карте
+        output_dir: Директория для файлов
+        select_card_func: Функция подбора карты
+        send_trade_func: Функция отправки обмена
+        monitor_obj: Объект монитора
+        processor: Существующий процессор (для сохранения состояния)
+        dry_run: Тестовый режим
+        debug: Режим отладки
+    
+    Returns:
+        Количество обработанных владельцев
+    """
+    # Используем существующий процессор или создаем новый
     if not processor:
         processor = OwnersProcessor(
             session=session,
@@ -366,7 +482,16 @@ def find_all_available_owners(
     session: requests.Session,
     card_id: str
 ) -> List[Dict[str, str]]:
-    """Удобная функция для поиска всех владельцев."""
+    """
+    Удобная функция для поиска всех владельцев.
+    
+    Args:
+        session: Сессия requests
+        card_id: ID карты
+    
+    Returns:
+        Список владельцев
+    """
     parser = OwnersParser(session)
     owners = parser.find_all_owners(card_id)
     return [owner.to_dict() for owner in owners]
