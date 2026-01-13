@@ -280,12 +280,17 @@ class OwnersProcessor:
         
         card_name = selected_card.get('name', '')
         wanters = selected_card.get('wanters_count', 0)
+        my_instance_id = selected_card.get('instance_id')
         
         print(f"   [{index}/{total}] {owner.name} → {card_name} ({wanters} желающих)")
         
         # Если нет функции отправки - пропускаем
         if not self.send_trade_func:
             print(f"      ⚠️  Функция отправки не передана")
+            return False, False
+        
+        if not my_instance_id:
+            print(f"      ⚠️  Не найден instance_id выбранной карты")
             return False, False
         
         # Ждем перед обменом
@@ -296,14 +301,17 @@ class OwnersProcessor:
             print(f"\n⚠️  Карта изменилась! Прерываем перед отправкой обмена")
             return False, True  # Не успешно, прервать
         
-        # Отправляем обмен (передаем trade_manager для отслеживания)
+        # ✅ ИСПРАВЛЕНО: Передаем his_card_id (а не instance_id), 
+        # функция send_trade_to_owner сама найдет instance_id у владельца
         success = self.send_trade_func(
             session=self.session,
             owner_id=int(owner.id),
             owner_name=owner.name,
-            my_card=selected_card,
-            his_card_id=his_card_id,
-            trade_manager=self.trade_manager,  # ВАЖНО: передаем менеджер
+            my_instance_id=my_instance_id,
+            his_card_id=his_card_id,  # ✅ card_id (не instance_id!)
+            my_card_name=card_name,
+            my_wanters=wanters,
+            trade_manager=self.trade_manager,
             dry_run=self.dry_run,
             debug=self.debug
         )
