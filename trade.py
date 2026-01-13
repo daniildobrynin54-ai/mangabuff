@@ -1,15 +1,248 @@
-"""Модуль для работы с обменами карт."""
+"""Модуль для работы с обменами карт с улучшенной системой отслеживания."""
 
 import json
 import time
-from typing import Any, Dict, Optional, Set
+import threading
+from typing import Any, Dict, Optional, Set, List
 import requests
 from bs4 import BeautifulSoup
 from config import BASE_URL, REQUEST_TIMEOUT, CARD_API_DELAY
 
 
+class TradeHistoryMonitor:
+    """Монитор истории обменов для отслеживания отданных карт."""
+    
+    def __init__(self, session: requests.Session, user_id: int, inventory_manager, debug: bool = False):
+        """
+        Инициализация монитора истории.
+        
+        Args:
+            session: Сессия requests
+            user_id: ID пользователя
+            inventory_manager: Менеджер инвентаря
+            debug: Режим отладки
+        """
+        self.session = session
+        self.user_id = user_id
+        self.inventory_manager = inventory_manager
+        self.debug = debug
+        self.running = False
+        self.thread = None
+        self.last_trade_ids: Set[int] = set()
+        self.traded_away_cards: Set[int] = set()  # card_id отданных карт
+    
+    def _log(self, message: str) -> None:
+        """Выводит отладочное сообщение."""
+        if self.debug:
+            print(f"[HISTORY] {message}")
+    
+    def fetch_recent_trades(self) -> List[Dict[str, Any]]:
+        """
+        Загружает последние обмены пользователя.
+        
+        Returns:
+            Список обменов с информацией о картах
+        """
+        url = f"{BASE_URL}/users/{self.user_id}/trades"
+        
+        try:
+            response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+            
+            if response.status_code != 200:
+                self._log(f"Ошибка загрузки истории: {response.status_code}")
+                return []
+            
+            soup = BeautifulSoup(response.text, "html.parser")
+            trades = []
+            
+            # Парсим каждый обмен
+            for trade_elem in soup.select('.history__item'):
+                trade_id_elem = trade_elem.get('data-id')
+                if not trade_id_elem:
+                    continue
+                
+                trade_id = int(trade_id_elem)
+                
+                # Извлекаем отданные карты (history__body--lost)
+                lost_cards = []
+                for lost_elem in trade_elem.select('.history__body--lost .history__body-item'):
+                    href = lost_elem.get('href', '')
+                    # Формат: /cards/85415/users
+                    import re
+                    match = re.search(r'/cards/(\d+)', href)
+                    if match:
+                        lost_cards.append(int(match.group(1)))
+                
+                # Извлекаем полученные карты (history__body--gained)
+                gained_cards = []
+                for gained_elem in trade_elem.select('.history__body--gained .history__body-item'):
+                    href = gained_elem.get('href', '')
+                    match = re.search(r'/cards/(\d+)', href)
+                    if match:
+                        gained_cards.append(int(match.group(1)))
+                
+                if lost_cards:  # Интересуют только обмены где мы отдали карты
+                    trades.append({
+                        'trade_id': trade_id,
+                        'lost_cards': lost_cards,
+                        'gained_cards': gained_cards
+                    })
+            
+            return trades
+            
+        except Exception as e:
+            self._log(f"Ошибка парсинга истории: {e}")
+            return []
+    
+    def check_and_remove_traded_cards(self) -> int:
+        """
+        Проверяет историю и удаляет отданные карты из инвентаря.
+        
+        Returns:
+            Количество удаленных карт
+        """
+        trades = self.fetch_recent_trades()
+        
+        if not trades:
+            return 0
+        
+        removed_count = 0
+        new_traded_cards = set()
+        
+        for trade in trades:
+            trade_id = trade['trade_id']
+            
+            # Если это новый обмен
+            if trade_id not in self.last_trade_ids:
+                self._log(f"Новый обмен обнаружен: ID {trade_id}")
+                
+                # Обрабатываем отданные карты
+                for card_id in trade['lost_cards']:
+                    if card_id not in self.traded_away_cards:
+                        self._log(f"  Отдана карта: {card_id}")
+                        
+                        # Удаляем из инвентаря
+                        if self._remove_card_from_inventory(card_id):
+                            removed_count += 1
+                            self.traded_away_cards.add(card_id)
+                            print(f"🗑️  Карта {card_id} удалена из инвентаря (завершенный обмен)")
+                
+                new_traded_cards.add(trade_id)
+        
+        # Обновляем список известных обменов
+        self.last_trade_ids.update(new_traded_cards)
+        
+        return removed_count
+    
+    def _remove_card_from_inventory(self, card_id: int) -> bool:
+        """
+        Удаляет карту из инвентаря по card_id.
+        
+        Args:
+            card_id: ID карты для удаления
+        
+        Returns:
+            True если успешно удалено
+        """
+        try:
+            inventory = self.inventory_manager.load_inventory()
+            
+            # Ищем и удаляем карту
+            cards_to_remove = []
+            for card in inventory:
+                # Проверяем card_id в разных местах структуры
+                c_id = card.get('card_id')
+                if not c_id and isinstance(card.get('card'), dict):
+                    c_id = card['card'].get('id')
+                
+                if c_id == card_id:
+                    cards_to_remove.append(card)
+            
+            if not cards_to_remove:
+                self._log(f"Карта {card_id} не найдена в инвентаре")
+                return False
+            
+            # Удаляем первое совпадение (instance)
+            inventory.remove(cards_to_remove[0])
+            
+            # Сохраняем обновленный инвентарь
+            success = self.inventory_manager.save_inventory(inventory)
+            
+            if success:
+                self._log(f"✅ Карта {card_id} удалена из инвентаря")
+            
+            return success
+            
+        except Exception as e:
+            self._log(f"Ошибка удаления карты {card_id}: {e}")
+            return False
+    
+    def monitor_loop(self, check_interval: int = 10):
+        """
+        Основной цикл мониторинга.
+        
+        Args:
+            check_interval: Интервал проверки в секундах
+        """
+        self._log(f"Запущен мониторинг истории обменов (проверка каждые {check_interval}с)")
+        
+        # Начальная загрузка для установки baseline
+        initial_trades = self.fetch_recent_trades()
+        self.last_trade_ids = {t['trade_id'] for t in initial_trades}
+        self._log(f"Начальное состояние: {len(self.last_trade_ids)} известных обменов")
+        
+        while self.running:
+            try:
+                removed = self.check_and_remove_traded_cards()
+                
+                if removed > 0:
+                    self._log(f"Удалено карт из инвентаря: {removed}")
+                
+            except Exception as e:
+                self._log(f"Ошибка в цикле мониторинга: {e}")
+            
+            time.sleep(check_interval)
+    
+    def start(self, check_interval: int = 10):
+        """Запускает мониторинг в отдельном потоке."""
+        if self.running:
+            self._log("Мониторинг уже запущен")
+            return
+        
+        self.running = True
+        self.thread = threading.Thread(
+            target=self.monitor_loop,
+            args=(check_interval,),
+            daemon=True
+        )
+        self.thread.start()
+        print("📊 Мониторинг истории обменов запущен")
+    
+    def stop(self):
+        """Останавливает мониторинг."""
+        if not self.running:
+            return
+        
+        self._log("Остановка мониторинга истории...")
+        self.running = False
+        
+        if self.thread:
+            self.thread.join(timeout=5)
+        
+        print("📊 Мониторинг истории остановлен")
+    
+    def force_check(self) -> int:
+        """
+        Принудительная проверка истории.
+        
+        Returns:
+            Количество удаленных карт
+        """
+        return self.check_and_remove_traded_cards()
+
+
 class TradeManager:
-    """Менеджер обменов карточками с отслеживанием состояния."""
+    """Менеджер обменов с прямой отправкой через API."""
     
     def __init__(self, session: requests.Session, debug: bool = False):
         """
@@ -67,36 +300,29 @@ class TradeManager:
         Returns:
             True если успешно
         """
-        # Проверка по статус-коду
         if response.status_code == 200:
             return True
             
-        # Проверка по редиректу
         if response.status_code in (301, 302):
             location = response.headers.get("Location", "")
             if "/trades/" in location:
                 return True
         
-        # Проверка по JSON ответу
         try:
             data = response.json()
             if isinstance(data, dict):
-                # Явные индикаторы успеха
                 if data.get("success") or data.get("ok"):
                     return True
                 
-                # Проверка наличия trade с ID
                 if isinstance(data.get("trade"), dict) and data["trade"].get("id"):
                     return True
                 
-                # Проверка по тексту сообщения
                 body_text = json.dumps(data).lower()
                 if any(word in body_text for word in ["успеш", "отправ", "создан"]):
                     return True
         except ValueError:
             pass
         
-        # Проверка по тексту ответа
         body = (response.text or "").lower()
         if any(word in body for word in ["успеш", "отправ", "создан"]):
             return True
@@ -133,21 +359,19 @@ class TradeManager:
         self.sent_trades.clear()
         self._log(f"Список отправленных обменов очищен ({count} записей)")
     
-    def create_trade(
+    def create_trade_direct_api(
         self,
         receiver_id: int,
         my_instance_id: int,
-        his_instance_id: int,
-        max_retries: int = 2
+        his_instance_id: int
     ) -> bool:
         """
-        Отправляет обмен карточками через API с повторными попытками.
+        ⚡ ПРЯМАЯ отправка обмена через API БЕЗ поиска instance_id.
         
         Args:
             receiver_id: ID получателя обмена
             my_instance_id: Instance ID моей карточки
-            his_instance_id: Instance ID карточки получателя
-            max_retries: Максимальное количество попыток
+            his_instance_id: Instance ID карточки получателя (УЖЕ ИЗВЕСТЕН)
         
         Returns:
             True если обмен успешно отправлен
@@ -162,127 +386,39 @@ class TradeManager:
             ("receiver_card_ids[]", int(his_instance_id)),
         ]
         
-        self._log(f"Создание обмена:")
-        self._log(f"  URL: {url}")
+        self._log(f"⚡ ПРЯМАЯ отправка через API:")
         self._log(f"  receiver_id: {receiver_id}")
-        self._log(f"  my_instance_id (creator_card_ids[]): {my_instance_id}")
-        self._log(f"  his_instance_id (receiver_card_ids[]): {his_instance_id}")
-        
-        for attempt in range(1, max_retries + 1):
-            try:
-                if attempt > 1:
-                    self._log(f"Повторная попытка {attempt}/{max_retries}...")
-                    time.sleep(1)
-                
-                # Первая попытка с form data
-                self._log(f"Отправка запроса (form data)...")
-                response = self.session.post(
-                    url,
-                    data=data,
-                    headers=headers,
-                    allow_redirects=False,
-                    timeout=REQUEST_TIMEOUT
-                )
-                
-                self._log(f"Response status: {response.status_code}")
-                self._log(f"Response headers: {dict(response.headers)}")
-                self._log(f"Response body (first 500 chars): {response.text[:500]}")
-                
-                if self._is_success_response(response):
-                    self._log("✅ Обмен успешно создан (form data)")
-                    return True
-                
-                # Если статус 422 - карта уже в обмене
-                if response.status_code == 422:
-                    try:
-                        error_data = response.json()
-                        self._log(f"Ошибка 422: {error_data}")
-                    except:
-                        pass
-                    self._log("❌ Карта уже участвует в обмене")
-                    return False
-                
-                # Если статус 429 - rate limit
-                if response.status_code == 429:
-                    self._log("⚠️  Rate limit (429) - слишком много запросов")
-                    return False
-                
-                # Вторая попытка с JSON payload
-                self._log(f"Попытка с JSON payload...")
-                json_payload = {
-                    "receiver_id": receiver_id,
-                    "creator_card_ids": [my_instance_id],
-                    "receiver_card_ids": [his_instance_id],
-                }
-                
-                response2 = self.session.post(
-                    url,
-                    json=json_payload,
-                    headers={**headers, "Content-Type": "application/json"},
-                    allow_redirects=False,
-                    timeout=REQUEST_TIMEOUT
-                )
-                
-                self._log(f"JSON Response status: {response2.status_code}")
-                
-                if self._is_success_response(response2):
-                    self._log("✅ Обмен успешно создан (JSON)")
-                    return True
-                
-                if response2.status_code == 422:
-                    self._log("❌ Карта уже участвует в обмене (JSON)")
-                    return False
-                
-                self._log(f"❌ Обмен не удался. Status: {response.status_code}")
-                
-            except requests.RequestException as e:
-                self._log(f"❌ Ошибка сети на попытке {attempt}: {e}")
-                if attempt == max_retries:
-                    return False
-        
-        return False
-    
-    def cancel_all_sent_trades(self) -> bool:
-        """
-        Отменяет все отправленные обмены.
-        
-        Returns:
-            True если запрос успешен
-        """
-        url = f"{BASE_URL}/trades/rejectAll?type_trade=sender"
-        
-        headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Referer": f"{BASE_URL}/trades/offers",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-User": "?1",
-            "Upgrade-Insecure-Requests": "1",
-        }
-        
-        self._log("Отмена всех отправленных обменов...")
+        self._log(f"  my_instance_id: {my_instance_id}")
+        self._log(f"  his_instance_id: {his_instance_id}")
         
         try:
-            response = self.session.get(
+            response = self.session.post(
                 url,
+                data=data,
                 headers=headers,
-                allow_redirects=True,
+                allow_redirects=False,
                 timeout=REQUEST_TIMEOUT
             )
             
             self._log(f"Response status: {response.status_code}")
             
-            if response.status_code == 200:
-                # Очищаем список отправленных обменов после успешной отмены
-                self.clear_sent_trades()
+            if self._is_success_response(response):
+                self._log("✅ Обмен успешно создан")
                 return True
             
+            if response.status_code == 422:
+                self._log("❌ Карта уже участвует в обмене (422)")
+                return False
+            
+            if response.status_code == 429:
+                self._log("⚠️  Rate limit (429)")
+                return False
+            
+            self._log(f"❌ Обмен не удался: {response.status_code}")
             return False
             
         except requests.RequestException as e:
-            self._log(f"Network error: {e}")
+            self._log(f"❌ Ошибка сети: {e}")
             return False
     
     def find_partner_card_instance(
@@ -291,7 +427,7 @@ class TradeManager:
         card_id: int
     ) -> Optional[int]:
         """
-        Находит instance_id карточки у партнера.
+        Находит instance_id карточки у партнера через API.
         
         Args:
             partner_id: ID партнера
@@ -300,72 +436,8 @@ class TradeManager:
         Returns:
             Instance ID карточки или None
         """
-        self._log(f"Поиск instance_id карты {card_id} у владельца {partner_id}...")
+        self._log(f"🔍 Поиск instance_id карты {card_id} у владельца {partner_id}...")
         
-        # Попытка 1: через страницу обменов
-        instance_id = self._find_on_page(partner_id, card_id)
-        if instance_id:
-            self._log(f"✅ Найден на странице: instance_id={instance_id}")
-            return instance_id
-        
-        self._log("Карта не найдена на странице, пробуем через API...")
-        
-        # Попытка 2: через API
-        instance_id = self._find_via_api(partner_id, card_id)
-        if instance_id:
-            self._log(f"✅ Найден через API: instance_id={instance_id}")
-            return instance_id
-        
-        self._log(f"❌ Instance_id карты {card_id} не найден у владельца {partner_id}")
-        return None
-    
-    def _find_on_page(self, partner_id: int, card_id: int) -> Optional[int]:
-        """Ищет карту на странице обменов."""
-        try:
-            url = f"{BASE_URL}/trades/offers/{partner_id}"
-            self._log(f"Загрузка страницы: {url}")
-            
-            response = self.session.get(url, timeout=REQUEST_TIMEOUT)
-            
-            if response.status_code != 200:
-                self._log(f"Ошибка загрузки страницы: {response.status_code}")
-                return None
-            
-            soup = BeautifulSoup(response.text, "html.parser")
-            cards = soup.select('[data-id], [data-card-id]')
-            
-            self._log(f"Найдено элементов карт на странице: {len(cards)}")
-            
-            for idx, card_el in enumerate(cards):
-                el_card_id = (
-                    card_el.get("data-card-id") or
-                    card_el.get("data-cardid")
-                )
-                el_instance_id = (
-                    card_el.get("data-id") or
-                    card_el.get("data-instance-id")
-                )
-                
-                if self.debug and idx < 5:  # Показываем первые 5 для отладки
-                    self._log(f"  Карта #{idx}: card_id={el_card_id}, instance_id={el_instance_id}")
-                
-                if el_card_id and int(el_card_id) == card_id and el_instance_id:
-                    self._log(f"✅ Совпадение найдено! instance_id={el_instance_id}")
-                    return int(el_instance_id)
-            
-            return None
-            
-        except Exception as e:
-            self._log(f"Ошибка при поиске на странице: {e}")
-            return None
-    
-    def _find_via_api(
-        self,
-        partner_id: int,
-        card_id: int,
-        max_attempts: int = 50
-    ) -> Optional[int]:
-        """Ищет карту через API."""
         try:
             url = f"{BASE_URL}/trades/{partner_id}/availableCardsLoad"
             
@@ -381,13 +453,10 @@ class TradeManager:
                 headers["X-CSRF-TOKEN"] = csrf_token
             
             offset = 0
+            max_attempts = 50
             attempts = 0
             
-            self._log(f"Начинаем поиск через API (max {max_attempts} попыток)...")
-            
             while attempts < max_attempts:
-                self._log(f"API запрос #{attempts + 1}: offset={offset}")
-                
                 response = self.session.post(
                     url,
                     data={"offset": offset},
@@ -402,42 +471,141 @@ class TradeManager:
                 data = response.json()
                 cards = data.get("cards", [])
                 
-                self._log(f"Получено карт: {len(cards)}")
-                
                 if not cards:
-                    self._log("Карты закончились")
                     break
                 
-                for idx, card in enumerate(cards):
+                for card in cards:
                     c_card_id = card.get("card_id")
                     
-                    # Проверяем вложенный объект
                     if isinstance(card.get("card"), dict):
                         c_card_id = card["card"].get("id") or c_card_id
-                    
-                    if self.debug and idx < 3:  # Показываем первые 3 для отладки
-                        self._log(f"  API карта #{idx}: card_id={c_card_id}, instance_id={card.get('id')}")
                     
                     if c_card_id and int(c_card_id) == card_id:
                         instance_id = card.get("id")
                         if instance_id:
-                            self._log(f"✅ Совпадение найдено через API! instance_id={instance_id}")
+                            self._log(f"✅ Найден instance_id={instance_id}")
                             return int(instance_id)
                 
                 offset += len(cards)
                 
                 if len(cards) < 60:
-                    self._log("Получено меньше 60 карт - это последняя страница")
                     break
                 
                 time.sleep(CARD_API_DELAY)
                 attempts += 1
             
+            self._log(f"❌ Instance_id не найден")
             return None
             
         except Exception as e:
-            self._log(f"Ошибка при поиске через API: {e}")
+            self._log(f"Ошибка поиска: {e}")
             return None
+    
+    def cancel_all_sent_trades(self, history_monitor: Optional[TradeHistoryMonitor] = None) -> bool:
+        """
+        Отменяет все отправленные обмены и обновляет историю.
+        
+        Args:
+            history_monitor: Монитор истории для немедленной проверки
+        
+        Returns:
+            True если успешно
+        """
+        url = f"{BASE_URL}/trades/rejectAll?type_trade=sender"
+        
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": f"{BASE_URL}/trades/offers",
+        }
+        
+        self._log("Отмена всех отправленных обменов...")
+        
+        try:
+            response = self.session.get(
+                url,
+                headers=headers,
+                allow_redirects=True,
+                timeout=REQUEST_TIMEOUT
+            )
+            
+            self._log(f"Response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                # Очищаем список отправленных обменов
+                self.clear_sent_trades()
+                
+                # Ждем обновления на сервере
+                time.sleep(2)
+                
+                # Принудительная проверка истории
+                if history_monitor:
+                    self._log("Проверка истории обменов после отмены...")
+                    removed = history_monitor.force_check()
+                    if removed > 0:
+                        print(f"🗑️  Удалено {removed} карт(ы) из инвентаря после проверки истории")
+                
+                return True
+            
+            return False
+            
+        except requests.RequestException as e:
+            self._log(f"Ошибка сети: {e}")
+            return False
+
+
+def send_trade_direct(
+    session: requests.Session,
+    owner_id: int,
+    owner_name: str,
+    my_instance_id: int,
+    his_instance_id: int,
+    my_card_name: str = "",
+    my_wanters: int = 0,
+    trade_manager: Optional[TradeManager] = None,
+    dry_run: bool = True,
+    debug: bool = False
+) -> bool:
+    """
+    ⚡ ПРЯМАЯ отправка обмена когда instance_id УЖЕ ИЗВЕСТЕН.
+    
+    Args:
+        session: Сессия requests
+        owner_id: ID владельца
+        owner_name: Имя владельца
+        my_instance_id: Instance ID моей карты
+        his_instance_id: Instance ID карты владельца (УЖЕ ИЗВЕСТЕН!)
+        my_card_name: Название моей карты
+        my_wanters: Количество желающих
+        trade_manager: Менеджер обменов
+        dry_run: Тестовый режим
+        debug: Режим отладки
+    
+    Returns:
+        True если обмен отправлен успешно
+    """
+    if not trade_manager:
+        trade_manager = TradeManager(session, debug)
+    
+    if dry_run:
+        print(f"[DRY-RUN] ⚡ Прямой обмен → {owner_name}")
+        print(f"           My: {my_instance_id}, His: {his_instance_id}")
+        return True
+    
+    # Отправляем напрямую
+    success = trade_manager.create_trade_direct_api(
+        owner_id,
+        my_instance_id,
+        his_instance_id
+    )
+    
+    if success:
+        # Отмечаем (используем 0 для card_id т.к. нам не важно в данном контексте)
+        trade_manager.mark_trade_sent(owner_id, 0)
+        print(f"✅ Обмен отправлен → {owner_name} | {my_card_name} ({my_wanters} желающих)")
+    else:
+        print(f"❌ Ошибка → {owner_name}")
+    
+    return success
 
 
 def send_trade_to_owner(
@@ -453,84 +621,57 @@ def send_trade_to_owner(
     debug: bool = False
 ) -> bool:
     """
-    Отправляет обмен конкретному владельцу.
+    Отправляет обмен с автопоиском instance_id (старый метод).
     
-    Args:
-        session: Сессия requests
-        owner_id: ID владельца
-        owner_name: Имя владельца
-        my_instance_id: Instance ID моей карты
-        his_card_id: ID карточки (для поиска instance_id у владельца)
-        my_card_name: Название моей карты (для вывода)
-        my_wanters: Количество желающих (для вывода)
-        trade_manager: Менеджер обменов
-        dry_run: Тестовый режим
-        debug: Режим отладки
-    
-    Returns:
-        True если обмен отправлен успешно
+    Для прямой отправки используйте send_trade_direct().
     """
     if not my_instance_id:
         if debug:
             print(f"[TRADE] Отсутствует my_instance_id")
         return False
     
-    # Создаем менеджер если не передан
     if not trade_manager:
         trade_manager = TradeManager(session, debug)
     
-    # Проверяем, не был ли уже отправлен обмен
     if not dry_run and trade_manager.has_trade_sent(owner_id, his_card_id):
         if debug:
-            print(f"[TRADE] Обмен уже был отправлен {owner_name} (ID: {owner_id})")
+            print(f"[TRADE] Обмен уже отправлен {owner_name}")
         print(f"⏭️  Обмен уже отправлен → {owner_name}")
         return False
     
-    # Dry-run режим
     if dry_run:
-        print(f"[DRY-RUN] 📤 Обмен → {owner_name} (ID: {owner_id})")
-        print(f"           Моя карта: {my_card_name} (желающих: {my_wanters})")
-        print(f"           My instance_id: {my_instance_id}, ищем instance_id карты {his_card_id} у владельца")
+        print(f"[DRY-RUN] 📤 Обмен → {owner_name}")
         return True
     
-    # Находим instance_id карточки у владельца
+    # Ищем instance_id
     his_instance_id = trade_manager.find_partner_card_instance(owner_id, his_card_id)
     
     if not his_instance_id:
-        if debug:
-            print(f"[TRADE] Не найден instance_id карты {his_card_id} у владельца {owner_id}")
         print(f"❌ Карта не найдена → {owner_name}")
         return False
     
-    # Отправляем обмен
-    success = trade_manager.create_trade(
-        owner_id, 
-        my_instance_id, 
-        his_instance_id,
-        max_retries=2
+    # Используем прямую отправку
+    return send_trade_direct(
+        session, owner_id, owner_name,
+        my_instance_id, his_instance_id,
+        my_card_name, my_wanters,
+        trade_manager, dry_run, debug
     )
-    
-    if success:
-        # Отмечаем обмен как отправленный
-        trade_manager.mark_trade_sent(owner_id, his_card_id)
-        print(f"✅ Обмен отправлен → {owner_name} | Моя карта: {my_card_name} ({my_wanters} желающих)")
-    else:
-        print(f"❌ Ошибка отправки → {owner_name}")
-    
-    return success
 
 
 def cancel_all_sent_trades(
     session: requests.Session,
     trade_manager: Optional[TradeManager] = None,
+    history_monitor: Optional[TradeHistoryMonitor] = None,
     debug: bool = False
 ) -> bool:
     """
-    Удобная функция для отмены всех обменов.
+    Отменяет все обмены с проверкой истории.
     
     Args:
         session: Сессия requests
         trade_manager: Менеджер обменов
+        history_monitor: Монитор истории
         debug: Режим отладки
     
     Returns:
@@ -539,4 +680,4 @@ def cancel_all_sent_trades(
     if not trade_manager:
         trade_manager = TradeManager(session, debug)
     
-    return trade_manager.cancel_all_sent_trades()
+    return trade_manager.cancel_all_sent_trades(history_monitor)
