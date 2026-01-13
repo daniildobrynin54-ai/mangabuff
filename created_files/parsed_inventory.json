@@ -1,0 +1,29 @@
+{
+  "35933": {
+    "card_id": 35933,
+    "name": "Скотч",
+    "rank": "E",
+    "wanters_count": 16,
+    "timestamp": 1768334038.0629997,
+    "cached_at": "2026-01-13T21:53:58.063001",
+    "instance_id": 351963572
+  },
+  "113028": {
+    "card_id": 113028,
+    "name": "Дженон",
+    "rank": "E",
+    "wanters_count": 0,
+    "timestamp": 1768334048.2174215,
+    "cached_at": "2026-01-13T21:54:08.217423",
+    "instance_id": 367001505
+  },
+  "87107": {
+    "card_id": 87107,
+    "name": "Сибилла",
+    "rank": "E",
+    "wanters_count": 3,
+    "timestamp": 1768334060.625537,
+    "cached_at": "2026-01-13T21:54:20.625538",
+    "instance_id": 345919302
+  }
+}
