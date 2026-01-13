@@ -14,9 +14,10 @@ from config import (
     MONITOR_CHECK_INTERVAL,
     MONITOR_STATUS_INTERVAL
 )
-from boost import get_boost_card_info
+from boost import get_boost_card_info, replace_club_card
 from trade import cancel_all_sent_trades
-from utils import save_json, print_section, print_success, print_warning
+from daily_stats import DailyStatsManager
+from utils import save_json, load_json, print_section, print_success, print_warning
 
 
 class BoostMonitor:
@@ -44,6 +45,7 @@ class BoostMonitor:
         self.boost_available = False
         self.card_changed = False
         self.current_card_id = None
+        self.stats_manager = DailyStatsManager(output_dir)
     
     def check_boost_available(self) -> Optional[str]:
         """
@@ -76,6 +78,32 @@ class BoostMonitor:
             
         except requests.RequestException as e:
             print_warning(f"Ошибка проверки буста: {e}")
+            return None
+    
+    def check_card_changed(self) -> Optional[int]:
+        """
+        НОВОЕ: Проверяет, изменилась ли карта в клубе.
+        
+        Returns:
+            Новый card_id если карта изменилась, иначе None
+        """
+        try:
+            # Загружаем информацию о текущей карте
+            current_card_info = get_boost_card_info(self.session, self.club_url)
+            
+            if not current_card_info:
+                return None
+            
+            new_card_id = current_card_info.get('card_id')
+            
+            # Если карта изменилась
+            if new_card_id and self.current_card_id and new_card_id != self.current_card_id:
+                return new_card_id
+            
+            return None
+            
+        except Exception as e:
+            print_warning(f"Ошибка проверки смены карты: {e}")
             return None
     
     def _find_boost_button(self, soup: BeautifulSoup):
@@ -112,6 +140,12 @@ class BoostMonitor:
         Returns:
             True если успешно
         """
+        # НОВОЕ: Проверяем лимит пожертвований
+        if not self.stats_manager.can_donate():
+            print_warning(f"⛔ Достигнут дневной лимит пожертвований!")
+            self.stats_manager.print_stats()
+            return False
+        
         try:
             # Получаем информацию о ТЕКУЩЕЙ карте для внесения
             current_boost_card = get_boost_card_info(self.session, boost_url)
@@ -138,6 +172,10 @@ class BoostMonitor:
                 return False
             
             print_success("Карта успешно внесена в клуб!")
+            
+            # НОВОЕ: Увеличиваем счетчик пожертвований
+            self.stats_manager.increment_donations()
+            self.stats_manager.print_stats()
             
             # Отменяем все обмены
             self._cancel_pending_trades()
@@ -185,6 +223,57 @@ class BoostMonitor:
             print_warning(f"Ошибка при внесении карты: {e}")
             import traceback
             traceback.print_exc()
+            return False
+    
+    def handle_card_change_without_boost(self, new_card_id: int) -> bool:
+        """
+        НОВОЕ: Обрабатывает изменение карты в клубе без буста.
+        
+        Args:
+            new_card_id: ID новой карты
+        
+        Returns:
+            True если успешно
+        """
+        try:
+            timestamp = time.strftime('%H:%M:%S')
+            print(f"\n🔄 [{timestamp}] КАРТА В КЛУБЕ ИЗМЕНИЛАСЬ!")
+            print(f"   Старая карта ID: {self.current_card_id}")
+            print(f"   Новая карта ID: {new_card_id}\n")
+            
+            # Отменяем все обмены
+            self._cancel_pending_trades()
+            
+            # Ждем обновления данных
+            print("⏳ Ожидание обновления данных на сервере (2 сек)...")
+            time.sleep(2)
+            
+            # Загружаем информацию о новой карте
+            print("🔄 Загружаем информацию о новой карте...")
+            new_boost_card = get_boost_card_info(self.session, self.club_url)
+            
+            if not new_boost_card:
+                print_warning("Не удалось получить информацию о новой карте")
+                return False
+            
+            new_instance_id = new_boost_card.get('id', 0)
+            
+            # Выводим информацию
+            self._print_card_info(new_boost_card, new_instance_id, is_new=True)
+            
+            # Сохраняем новую карту
+            self._save_boost_card(new_boost_card)
+            self.current_card_id = new_card_id
+            
+            # Устанавливаем флаг для перезапуска
+            self.card_changed = True
+            
+            print("🔄 Флаг изменения карты установлен. Перезапуск обработки...\n")
+            
+            return True
+            
+        except Exception as e:
+            print_warning(f"Ошибка при обработке смены карты: {e}")
             return False
     
     def _save_boost_card(self, boost_card: dict) -> None:
@@ -260,12 +349,24 @@ class BoostMonitor:
         """Основной цикл мониторинга."""
         print(f"\n🔄 Запущен мониторинг страницы: {self.club_url}")
         print(f"   Проверка каждые {MONITOR_CHECK_INTERVAL} секунд...")
+        print("   Отслеживание: буст + смена карты в клубе")
         print("   Нажмите Ctrl+C для остановки\n")
+        
+        # Выводим статистику при старте
+        self.stats_manager.print_stats()
         
         check_count = 0
         
         while self.running:
             check_count += 1
+            
+            # НОВОЕ: Проверяем смену карты в клубе
+            new_card_id = self.check_card_changed()
+            if new_card_id:
+                self.handle_card_change_without_boost(new_card_id)
+                # Продолжаем мониторинг
+                time.sleep(MONITOR_CHECK_INTERVAL)
+                continue
             
             # Проверяем доступность буста
             boost_url = self.check_boost_available()
@@ -286,7 +387,7 @@ class BoostMonitor:
                 # Выводим статус периодически
                 if check_count == 1 or check_count % MONITOR_STATUS_INTERVAL == 0:
                     timestamp = time.strftime('%H:%M:%S')
-                    print(f"⏳ [{timestamp}] Проверка #{check_count}: буст недоступен")
+                    print(f"⏳ [{timestamp}] Проверка #{check_count}: буст недоступен, карта не менялась")
             
             # Задержка до следующей проверки
             time.sleep(MONITOR_CHECK_INTERVAL)

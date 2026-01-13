@@ -1,10 +1,11 @@
 {
-  "name": "Е Нянь",
-  "id": 374898208,
-  "card_id": 323752,
-  "rank": "E",
-  "wanters_count": 4,
-  "owners_count": 58,
-  "card_url": "https://mangabuff.ru/cards/323752/users",
-  "timestamp": 1768302335.6647081
+  "name": "Баам",
+  "id": 385802624,
+  "card_id": 1805,
+  "rank": "C",
+  "wanters_count": 270,
+  "owners_count": 2142,
+  "card_url": "https://mangabuff.ru/cards/1805/users",
+  "timestamp": 1768304109.7245352,
+  "needs_replacement": false
 }

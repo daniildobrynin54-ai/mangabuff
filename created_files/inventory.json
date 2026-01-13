@@ -9169,26 +9169,6 @@
     }
   },
   {
-    "id": 176880602,
-    "card_id": 39789,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 39789,
-      "name": "Шкатулка алхимии",
-      "image": "kEPFFoWcAqN0bIClDRULHwboUSN8sx.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 6047,
-      "manga": {
-        "id": 6047,
-        "name": "Я злой лорд межгалактической империи!"
-      }
-    }
-  },
-  {
     "id": 392913218,
     "card_id": 234447,
     "is_lock": 0,
@@ -9205,26 +9185,6 @@
       "manga": {
         "id": 34052,
         "name": "Реинкарнатор"
-      }
-    }
-  },
-  {
-    "id": 395049439,
-    "card_id": 75649,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 75649,
-      "name": "Промей",
-      "image": "BBnOdC374UD9C8gWyIVGxjY2gwBcDA.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 27440,
-      "manga": {
-        "id": 27440,
-        "name": "Когда нас настигает судьба"
       }
     }
   },
@@ -9285,26 +9245,6 @@
       "manga": {
         "id": 14839,
         "name": "Наказание злодейки"
-      }
-    }
-  },
-  {
-    "id": 392912482,
-    "card_id": 18645,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 18645,
-      "name": "Хильда",
-      "image": "KFR0N4E59kOuZbEVl5AzgLXz3Zoq6Q.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24893,
-      "manga": {
-        "id": 24893,
-        "name": "Оказывается, я аристократка!"
       }
     }
   },
@@ -9546,26 +9486,6 @@
     }
   },
   {
-    "id": 392912355,
-    "card_id": 250508,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 250508,
-      "name": "Джей",
-      "image": "jKmbs7kXF0buMMBcYNGBmT74vFEVhF.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 38267,
-      "manga": {
-        "id": 38267,
-        "name": "Можно поймать русала на удочку?"
-      }
-    }
-  },
-  {
     "id": 190666240,
     "card_id": 79584,
     "is_lock": 0,
@@ -9646,26 +9566,6 @@
     }
   },
   {
-    "id": 392912597,
-    "card_id": 183011,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 183011,
-      "name": "Ариэль",
-      "image": "9qdwWxHZ73wI9gBlwbXF9JpAltvOIH.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 656,
-      "manga": {
-        "id": 656,
-        "name": "Я фальшивая Святая, но Боги одержимы мной"
-      }
-    }
-  },
-  {
     "id": 395049564,
     "card_id": 51264,
     "is_lock": 0,
@@ -9702,26 +9602,6 @@
       "manga": {
         "id": 36544,
         "name": "Я неправильно воспитала своего мужа."
-      }
-    }
-  },
-  {
-    "id": 395049676,
-    "card_id": 154898,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 154898,
-      "name": "Эмили",
-      "image": "TPYQ1e9HOwrJP1EAZHRjUtZw4lBPlP.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 34696,
-      "manga": {
-        "id": 34696,
-        "name": "Прошу, оставьте Эмили в покое"
       }
     }
   },
@@ -9906,26 +9786,6 @@
     }
   },
   {
-    "id": 177805733,
-    "card_id": 78624,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 78624,
-      "name": "Минхён",
-      "image": "4eNSHFDbjRLzdUc0VOCEhYhQJf8RmU.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 36560,
-      "manga": {
-        "id": 36560,
-        "name": "Регрессия безумного гения-композитора"
-      }
-    }
-  },
-  {
     "id": 216434436,
     "card_id": 217072,
     "is_lock": 0,
@@ -10076,26 +9936,6 @@
       "manga": {
         "id": 28624,
         "name": "Я влюбилась с первого взгляда, мистер тайный злодей!"
-      }
-    }
-  },
-  {
-    "id": 395049013,
-    "card_id": 84272,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 84272,
-      "name": "Чакал",
-      "image": "627mJdX8anJ990X62Hh5Uh4FyPKwai.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 36564,
-      "manga": {
-        "id": 36564,
-        "name": "Я - кошка, но меня удочерила волчья семья?"
       }
     }
   },
@@ -10274,26 +10114,6 @@
     }
   },
   {
-    "id": 395049379,
-    "card_id": 47598,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 47598,
-      "name": "Микаэль Небель",
-      "image": "cdOaEHHZTwVMi1gAIdazcdSHLcKO5T.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 667,
-      "manga": {
-        "id": 667,
-        "name": "Невеста кронпринца"
-      }
-    }
-  },
-  {
     "id": 196515096,
     "card_id": 192175,
     "is_lock": 0,
@@ -10310,26 +10130,6 @@
       "manga": {
         "id": 37851,
         "name": "Отец и дочь"
-      }
-    }
-  },
-  {
-    "id": 218031404,
-    "card_id": 17920,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 17920,
-      "name": "Брут и Цезарь",
-      "image": "h5H8lFcLJ9Wlb14CLNKNpnGAPnNXco.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 20269,
-      "manga": {
-        "id": 20269,
-        "name": "Брут и Пикси"
       }
     }
   },
@@ -10394,26 +10194,6 @@
     }
   },
   {
-    "id": 395048882,
-    "card_id": 158379,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 158379,
-      "name": "Чэнь Ся",
-      "image": "QhCaMapgi9lFp9ybpjKdJNjRxNl0Cb.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 37382,
-      "manga": {
-        "id": 37382,
-        "name": "Реинкарнация Легендарного Героя"
-      }
-    }
-  },
-  {
     "id": 199886516,
     "card_id": 39333,
     "is_lock": 0,
@@ -10450,26 +10230,6 @@
       "manga": {
         "id": 17525,
         "name": "Обещание. Золушка"
-      }
-    }
-  },
-  {
-    "id": 395049012,
-    "card_id": 131478,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 131478,
-      "name": "Мин Лан и Мин Цзин",
-      "image": "8VeSghHk2TArw3Vt3zFFgTj8DIgapS.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24225,
-      "manga": {
-        "id": 24225,
-        "name": "Голубые крылья"
       }
     }
   },
@@ -10614,26 +10374,6 @@
     }
   },
   {
-    "id": 382131765,
-    "card_id": 30827,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 30827,
-      "name": "Хлоя",
-      "image": "UO1H2ImB6vqNafHyhEKevtWHpAqphE.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 34760,
-      "manga": {
-        "id": 34760,
-        "name": "Я сверну шею этому милому ублюдку"
-      }
-    }
-  },
-  {
     "id": 322734265,
     "card_id": 228777,
     "is_lock": 0,
@@ -10710,26 +10450,6 @@
       "manga": {
         "id": 10204,
         "name": "Шрек"
-      }
-    }
-  },
-  {
-    "id": 386148797,
-    "card_id": 22599,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 22599,
-      "name": "Ю Дживон",
-      "image": "RYDcTP8Z12dqeuRlV0NmVTVAsjknKO.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24787,
-      "manga": {
-        "id": 24787,
-        "name": "Целитель, пожирающий яд"
       }
     }
   },
@@ -11070,26 +10790,6 @@
       "manga": {
         "id": 36898,
         "name": "Бродяга"
-      }
-    }
-  },
-  {
-    "id": 361599305,
-    "card_id": 251974,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 251974,
-      "name": "Лун Чэнь и Лун Чэнь Тао",
-      "image": "zhNOuTeGEwEVhbZJujOcNcQUnnxBv4.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 37443,
-      "manga": {
-        "id": 37443,
-        "name": "После того как я стала младенцем, семья злодея попыталась меня убить!"
       }
     }
   },
@@ -11474,26 +11174,6 @@
     }
   },
   {
-    "id": 387247259,
-    "card_id": 219185,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 219185,
-      "name": "Рагна",
-      "image": "hBfHvedU4tYqeFPzOwRhEhLsD2ED4b.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24106,
-      "manga": {
-        "id": 24106,
-        "name": "Рагна Багровый"
-      }
-    }
-  },
-  {
     "id": 392912035,
     "card_id": 154174,
     "is_lock": 0,
@@ -11550,26 +11230,6 @@
       "manga": {
         "id": 19887,
         "name": "Герцог, что вы делаете?"
-      }
-    }
-  },
-  {
-    "id": 389413697,
-    "card_id": 36773,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 36773,
-      "name": "Эрнест Уивер",
-      "image": "PcKYNAwLFrCkefNjXvtiDwG1VPuAJt.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 1954,
-      "manga": {
-        "id": 1954,
-        "name": "Моя судьба спасти героя"
       }
     }
   },
@@ -11994,26 +11654,6 @@
     }
   },
   {
-    "id": 387247482,
-    "card_id": 11328,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 11328,
-      "name": "Трия",
-      "image": "xCHbI8ryKsBa0pSFdaHIrlWeFPT0C2.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24580,
-      "manga": {
-        "id": 24580,
-        "name": "Я закрыла бизнес из-за отцов-тиранов"
-      }
-    }
-  },
-  {
     "id": 311593783,
     "card_id": 229542,
     "is_lock": 0,
@@ -12130,26 +11770,6 @@
       "manga": {
         "id": 4668,
         "name": "4 способа спасти жену"
-      }
-    }
-  },
-  {
-    "id": 387247426,
-    "card_id": 255351,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 255351,
-      "name": "Гретель",
-      "image": "owkA3SKe5V0jN86N1KviY8JHST3Gfo.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 33990,
-      "manga": {
-        "id": 33990,
-        "name": "Переродившись в друга главного героя эроге, я буду жить свободно, используя мои знания об игре"
       }
     }
   },
@@ -12351,26 +11971,6 @@
     }
   },
   {
-    "id": 389413427,
-    "card_id": 283469,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 283469,
-      "name": "Су Чень",
-      "image": "vVVBlfMDHIufDEnLThnlwyWMidQjXD.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 34903,
-      "manga": {
-        "id": 34903,
-        "name": "Реинкарнация в начало апокалипсиса"
-      }
-    }
-  },
-  {
     "id": 389413428,
     "card_id": 105201,
     "is_lock": 0,
@@ -12427,26 +12027,6 @@
       "manga": {
         "id": 28180,
         "name": "Мужчина, одержимый бывшей женой"
-      }
-    }
-  },
-  {
-    "id": 387386276,
-    "card_id": 24598,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 24598,
-      "name": "Церера",
-      "image": "nLcBDYFZPiz7zud4hjrcQAc4dHbuEy.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 4635,
-      "manga": {
-        "id": 4635,
-        "name": "Тому, кто никогда меня не любил"
       }
     }
   },
@@ -12511,26 +12091,6 @@
     }
   },
   {
-    "id": 54069403,
-    "card_id": 116195,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 116195,
-      "name": "Джейн Доу",
-      "image": "hYGNARROIIks6ZHgJEfsaUnv5s14FH.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 30032,
-      "manga": {
-        "id": 30032,
-        "name": "Создатель преисподней"
-      }
-    }
-  },
-  {
     "id": 54041821,
     "card_id": 34074,
     "is_lock": 0,
@@ -12591,26 +12151,6 @@
     }
   },
   {
-    "id": 52718705,
-    "card_id": 21020,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 21020,
-      "name": "Кан Со Ын",
-      "image": "3W18apAAC1NhSGVjUI6wZbmuxoQ1Yj.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 29977,
-      "manga": {
-        "id": 29977,
-        "name": "Если только вы не против, учитель"
-      }
-    }
-  },
-  {
     "id": 147523274,
     "card_id": 17185,
     "is_lock": 0,
@@ -12625,46 +12165,6 @@
       "sort_index": 2,
       "manga_id": 33249,
       "manga": null
-    }
-  },
-  {
-    "id": 40701982,
-    "card_id": 61860,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 61860,
-      "name": "Роксант и Лиа",
-      "image": "1WCmy48wYqquWla0UcluEG6eIgMPzj.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 33625,
-      "manga": {
-        "id": 33625,
-        "name": "Подарите любовь"
-      }
-    }
-  },
-  {
-    "id": 141958445,
-    "card_id": 165523,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 165523,
-      "name": "Ян Джи Хё и Ха Рэ Джун",
-      "image": "fgqKSDOHHpdZfnpH0QRxxB9Sasfeml.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 36577,
-      "manga": {
-        "id": 36577,
-        "name": "Одолжить огонек?"
-      }
     }
   },
   {
@@ -12728,26 +12228,6 @@
     }
   },
   {
-    "id": 56631541,
-    "card_id": 115192,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 115192,
-      "name": "Дафнис и Хлоя",
-      "image": "fE3zu1oHaUjps65L3thlAA7XPEcJTU.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 34805,
-      "manga": {
-        "id": 34805,
-        "name": "Такт Опус. Судьба - город багровой мелодии"
-      }
-    }
-  },
-  {
     "id": 51107802,
     "card_id": 57127,
     "is_lock": 0,
@@ -12804,26 +12284,6 @@
       "manga": {
         "id": 5699,
         "name": "Эстетика злодея"
-      }
-    }
-  },
-  {
-    "id": 50630920,
-    "card_id": 98713,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 98713,
-      "name": "Мия",
-      "image": "PbyrCf5lClW5QsfS3jPtKFDqLlfDaQ.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24627,
-      "manga": {
-        "id": 24627,
-        "name": "Главная героиня хочет видеть меня своей невесткой"
       }
     }
   },
@@ -12908,26 +12368,6 @@
     }
   },
   {
-    "id": 89798602,
-    "card_id": 90674,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 90674,
-      "name": "Юн Гар Рам",
-      "image": "aCYpc54bnE5HljECjmrVKMjRcWCW3U.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 35943,
-      "manga": {
-        "id": 35943,
-        "name": "Игрушка"
-      }
-    }
-  },
-  {
     "id": 49281550,
     "card_id": 94992,
     "is_lock": 0,
@@ -12964,26 +12404,6 @@
       "manga": {
         "id": 3246,
         "name": "Мой второй муж бесподобен, потому я опечалена"
-      }
-    }
-  },
-  {
-    "id": 54804432,
-    "card_id": 85085,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 85085,
-      "name": "Дарджилинг Пикадилли",
-      "image": "6XESFQoVKmIqHvbQOLywcp85kIzZft.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 7824,
-      "manga": {
-        "id": 7824,
-        "name": "Главная героиня не может исправиться!"
       }
     }
   },
@@ -13164,26 +12584,6 @@
       "manga": {
         "id": 33918,
         "name": "Один в поле воин"
-      }
-    }
-  },
-  {
-    "id": 159339692,
-    "card_id": 189650,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 189650,
-      "name": "Томо",
-      "image": "YpvYD28sDOE6xnR0XeuxO9lMWGPOpS.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 20119,
-      "manga": {
-        "id": 20119,
-        "name": "Томо-тян – девушка!"
       }
     }
   },
@@ -13448,26 +12848,6 @@
     }
   },
   {
-    "id": 58667670,
-    "card_id": 53219,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 53219,
-      "name": "Кракен",
-      "image": "Vvnm74AXBRWKFXjLIrI5rcBaJss6cR.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 1333,
-      "manga": {
-        "id": 1333,
-        "name": "Я превратился в короля демонов и собрал свой гарем"
-      }
-    }
-  },
-  {
     "id": 58495050,
     "card_id": 11019,
     "is_lock": 0,
@@ -13625,26 +13005,6 @@
     }
   },
   {
-    "id": 34683744,
-    "card_id": 67733,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 67733,
-      "name": "Юи Касии",
-      "image": "YoAvhyfny1Y4sxDvHKGmSxO9hkW9Le.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24354,
-      "manga": {
-        "id": 24354,
-        "name": "Моя первая гяру"
-      }
-    }
-  },
-  {
     "id": 35261907,
     "card_id": 75163,
     "is_lock": 0,
@@ -13721,26 +13081,6 @@
       "manga": {
         "id": 23509,
         "name": "Хёка: Тебе не уйти"
-      }
-    }
-  },
-  {
-    "id": 36133662,
-    "card_id": 82752,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 82752,
-      "name": "Дайя и Джошу",
-      "image": "M1US2x8joux0JRjUfq8fsKWACTKsW6.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 24360,
-      "manga": {
-        "id": 24360,
-        "name": "Невероятные Приключения ДжоДжо — Часть 8: ДжоДжолион"
       }
     }
   },
@@ -13965,46 +13305,6 @@
     }
   },
   {
-    "id": 39422798,
-    "card_id": 85415,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 85415,
-      "name": "Цэн Юнь",
-      "image": "8gbB3Bh9vdAgW3oKoAIXqTTabxER3u.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 16847,
-      "manga": {
-        "id": 16847,
-        "name": "Твой взгляд"
-      }
-    }
-  },
-  {
-    "id": 40856358,
-    "card_id": 85532,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 85532,
-      "name": "Карасье",
-      "image": "oCxSheduYm1fwjBnhiZAOfTViIOTYi.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 2311,
-      "manga": {
-        "id": 2311,
-        "name": "Я всего лишь хотела стать верным мечом"
-      }
-    }
-  },
-  {
     "id": 97146235,
     "card_id": 133526,
     "is_lock": 0,
@@ -14101,46 +13401,6 @@
       "manga": {
         "id": 34810,
         "name": "Время для сожалений"
-      }
-    }
-  },
-  {
-    "id": 28328521,
-    "card_id": 38616,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 38616,
-      "name": "Иссушитель",
-      "image": "rlD7tKf0lykWaghGrE4gEdhepBSRdq.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 12177,
-      "manga": {
-        "id": 12177,
-        "name": "Майнкрафт вайфу"
-      }
-    }
-  },
-  {
-    "id": 48883992,
-    "card_id": 40263,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 40263,
-      "name": "Чу Ингон",
-      "image": "C5QTo5k1a5V1I7LarYAtyB4hct1I4U.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 30360,
-      "manga": {
-        "id": 30360,
-        "name": "Ресторан"
       }
     }
   },
@@ -14325,26 +13585,6 @@
     }
   },
   {
-    "id": 28909656,
-    "card_id": 23304,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 23304,
-      "name": "Кирон",
-      "image": "eHnoEJpDqepQarsuPSiaXxIE1Yeg5B.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 36041,
-      "manga": {
-        "id": 36041,
-        "name": "Умри Мелюзина"
-      }
-    }
-  },
-  {
     "id": 93911091,
     "card_id": 102917,
     "is_lock": 0,
@@ -14441,26 +13681,6 @@
       "manga": {
         "id": 26173,
         "name": "Чудесная жизнь одинокой леди"
-      }
-    }
-  },
-  {
-    "id": 47734788,
-    "card_id": 77695,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 77695,
-      "name": "Ди и Юмэко",
-      "image": "pCjtYpUhJAN0hJtXb3ZD6XAiidqPVr.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 8220,
-      "manga": {
-        "id": 8220,
-        "name": "Боевой отряд «Полный Провал»"
       }
     }
   },
@@ -14625,26 +13845,6 @@
     }
   },
   {
-    "id": 40451328,
-    "card_id": 50473,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 50473,
-      "name": "Е",
-      "image": "3JDTLiDKlnO12rJ7ryuPIoTKRScFqL.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 7830,
-      "manga": {
-        "id": 7830,
-        "name": "Короче, это поднятие уровня!"
-      }
-    }
-  },
-  {
     "id": 71008810,
     "card_id": 37745,
     "is_lock": 0,
@@ -14701,26 +13901,6 @@
       "manga": {
         "id": 26500,
         "name": "Гениальнейший мечник академии"
-      }
-    }
-  },
-  {
-    "id": 68950194,
-    "card_id": 94202,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 94202,
-      "name": "Ким Чхоль",
-      "image": "6CykieZqnRctr60Xva3PzTsl6WsdIY.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 7781,
-      "manga": {
-        "id": 7781,
-        "name": "Яблоневый цвет: юность на заре нового столетия"
       }
     }
   },
@@ -15145,26 +14325,6 @@
     }
   },
   {
-    "id": 171998880,
-    "card_id": 186330,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 186330,
-      "name": "Ли Хан Кёнг",
-      "image": "5Ag0UCX8SpSBNuOEAxHH92g7xjcQMj.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 18661,
-      "manga": {
-        "id": 18661,
-        "name": "Учебная группа"
-      }
-    }
-  },
-  {
     "id": 63784624,
     "card_id": 31876,
     "is_lock": 0,
@@ -15525,26 +14685,6 @@
     }
   },
   {
-    "id": 83720146,
-    "card_id": 45750,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 45750,
-      "name": "Луиза",
-      "image": "QTq6HDGCDUu070Y7PKxX2eDuobDQXl.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 20501,
-      "manga": {
-        "id": 20501,
-        "name": "Дом теней (Цветная версия)"
-      }
-    }
-  },
-  {
     "id": 66426994,
     "card_id": 33948,
     "is_lock": 0,
@@ -15561,26 +14701,6 @@
       "manga": {
         "id": 2437,
         "name": "Как приручить сторожевого пса императора"
-      }
-    }
-  },
-  {
-    "id": 175925879,
-    "card_id": 60177,
-    "is_lock": 0,
-    "is_not_tradable": 0,
-    "sort_index": 0,
-    "available_for_trade": true,
-    "card": {
-      "id": 60177,
-      "name": "Дирод Артиан",
-      "image": "OXQBT9Ozwm9d0NxoTJeCKs3xJ2KFYg.png",
-      "rank": "C",
-      "sort_index": 2,
-      "manga_id": 17923,
-      "manga": {
-        "id": 17923,
-        "name": "Чёрная мгла"
       }
     }
   },
@@ -23452,6 +22572,26 @@
     }
   },
   {
+    "id": 362437309,
+    "card_id": 54570,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 54570,
+      "name": "Дух",
+      "image": "pWMv7RkCLMqBwW04JWtVPKYnNJPZec.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 11222,
+      "manga": {
+        "id": 11222,
+        "name": "Мой папа слишком сильный"
+      }
+    }
+  },
+  {
     "id": 361652104,
     "card_id": 82352,
     "is_lock": 0,
@@ -24603,6 +23743,26 @@
     }
   },
   {
+    "id": 362436280,
+    "card_id": 256114,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 256114,
+      "name": "Со Иджи и О Роджи",
+      "image": "3plf5ExAlKj7UnZU2ZmBPgpElh8BUL.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 7662,
+      "manga": {
+        "id": 7662,
+        "name": "Я хочу победить только тебя"
+      }
+    }
+  },
+  {
     "id": 388350291,
     "card_id": 275198,
     "is_lock": 0,
@@ -25343,6 +24503,26 @@
     }
   },
   {
+    "id": 44566110,
+    "card_id": 88138,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 88138,
+      "name": "Замок",
+      "image": "fCu22mpPra398w5OYFNGHydK1lQeU8.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 24553,
+      "manga": {
+        "id": 24553,
+        "name": "Моя дорогая Астер"
+      }
+    }
+  },
+  {
     "id": 45063986,
     "card_id": 73024,
     "is_lock": 0,
@@ -25817,6 +24997,26 @@
     }
   },
   {
+    "id": 367982926,
+    "card_id": 66275,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 66275,
+      "name": "Хэ Шань",
+      "image": "ha4f0GIs0JTr9FVY1jUWVzmLAuchQs.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 9867,
+      "manga": {
+        "id": 9867,
+        "name": "Божественный доктор против короля демонов"
+      }
+    }
+  },
+  {
     "id": 16651043,
     "card_id": 5397,
     "is_lock": 0,
@@ -26153,6 +25353,26 @@
       "manga": {
         "id": 26138,
         "name": "Подвинься, я сама выберу концовку!"
+      }
+    }
+  },
+  {
+    "id": 367000463,
+    "card_id": 217598,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 217598,
+      "name": "Тряпка",
+      "image": "63x7CWzeDNO9zZaMpB6iGmnBWmgHER.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 38098,
+      "manga": {
+        "id": 38098,
+        "name": "Приключения маленькой богини в мире людей"
       }
     }
   },
@@ -26570,6 +25790,26 @@
       "manga": {
         "id": 17902,
         "name": "Я стала горничной герцога"
+      }
+    }
+  },
+  {
+    "id": 379330992,
+    "card_id": 168986,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 168986,
+      "name": "Эндимион",
+      "image": "ePrAUPIZDdSlSFcCkoeKNm3Yj2DC7P.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 4233,
+      "manga": {
+        "id": 4233,
+        "name": "Как переманить мужа на свою сторону"
       }
     }
   },
@@ -27114,6 +26354,26 @@
     }
   },
   {
+    "id": 94335779,
+    "card_id": 144109,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 144109,
+      "name": "Би Гван",
+      "image": "ScEcbRupn6CWa6EpNrF1jNfZHOtZCc.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 25317,
+      "manga": {
+        "id": 25317,
+        "name": "Перерождение Убийцы в Копа"
+      }
+    }
+  },
+  {
     "id": 92183028,
     "card_id": 117115,
     "is_lock": 0,
@@ -27371,6 +26631,23 @@
         "id": 26301,
         "name": "Влюбиться в умирающую принцессу"
       }
+    }
+  },
+  {
+    "id": 98544865,
+    "card_id": 83960,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 83960,
+      "name": "Горы",
+      "image": "SvbLf4SvO6dDvMVuPIgBn0qNzXrZgY.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 36658,
+      "manga": null
     }
   },
   {
@@ -28285,6 +27562,23 @@
     }
   },
   {
+    "id": 89866213,
+    "card_id": 108817,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 108817,
+      "name": "Сундук с золотом",
+      "image": "AjpmucGCLA2EHe0is0NOxCBzSPJwOR.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 5819,
+      "manga": null
+    }
+  },
+  {
     "id": 340788160,
     "card_id": 82434,
     "is_lock": 0,
@@ -28421,6 +27715,26 @@
       "manga": {
         "id": 25548,
         "name": "Хроники Демонического Культа"
+      }
+    }
+  },
+  {
+    "id": 340788646,
+    "card_id": 273173,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 273173,
+      "name": "Домик",
+      "image": "AaFeMfQgmvyHhnoHUDQGqDe09HsACx.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 38496,
+      "manga": {
+        "id": 38496,
+        "name": "Несчастная невеста в лапах повелителя драконов"
       }
     }
   },
@@ -29018,6 +28332,26 @@
       "manga": {
         "id": 37677,
         "name": "Злодей, я сделаю для тебя всё, но замуж не пойду"
+      }
+    }
+  },
+  {
+    "id": 175484957,
+    "card_id": 31828,
+    "is_lock": 1,
+    "is_not_tradable": 1,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 31828,
+      "name": "Суп Кимчи",
+      "image": "rM8LBViOaUj4QPT9X0UPcCu4zpjKBN.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 25403,
+      "manga": {
+        "id": 25403,
+        "name": "Айдол, спасший себе жизнь своими руками"
       }
     }
   },
@@ -30459,6 +29793,26 @@
     }
   },
   {
+    "id": 351963138,
+    "card_id": 110067,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 110067,
+      "name": "Шампанское",
+      "image": "ZyYxgBWGTmuSLT8RythI8kvZMXaiPE.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 24472,
+      "manga": {
+        "id": 24472,
+        "name": "Капитан! Это что, поле битвы?"
+      }
+    }
+  },
+  {
     "id": 351963222,
     "card_id": 234958,
     "is_lock": 0,
@@ -30615,6 +29969,26 @@
       "manga": {
         "id": 5176,
         "name": "Зов Ясы"
+      }
+    }
+  },
+  {
+    "id": 351963571,
+    "card_id": 68657,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 68657,
+      "name": "Ли Цзы",
+      "image": "eA5HnMw64OLfRhI5nq9Vt5PjQhMPnw.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 27817,
+      "manga": {
+        "id": 27817,
+        "name": "Эта всемогущая фальшивка будет отжигать!"
       }
     }
   },
@@ -30975,6 +30349,26 @@
       "manga": {
         "id": 36442,
         "name": "Я была настоящей хозяйкой Эльхейма"
+      }
+    }
+  },
+  {
+    "id": 348507220,
+    "card_id": 268438,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 268438,
+      "name": "Бокал",
+      "image": "extGN71GH9eqIel9Orz2RHR4o2IkmK.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 9152,
+      "manga": {
+        "id": 9152,
+        "name": "Всё было иллюзией"
       }
     }
   },
@@ -31492,6 +30886,26 @@
       "manga": {
         "id": 38238,
         "name": "Самый неудачливый искатель приключений: от \"Бога несчастий\" к \"Удаче 999999999 уровня\""
+      }
+    }
+  },
+  {
+    "id": 66897074,
+    "card_id": 66549,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 66549,
+      "name": "Картина",
+      "image": "FjJN0B5zjQ4mde78kPgC7CzSaDbJiU.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 18362,
+      "manga": {
+        "id": 18362,
+        "name": "50 рецептов чая от герцогини"
       }
     }
   },
@@ -32467,6 +31881,26 @@
     }
   },
   {
+    "id": 342972833,
+    "card_id": 200853,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 200853,
+      "name": "Рыбки",
+      "image": "nUwCqSD5HNo1Ob1bX3uXQVMLOspxbE.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 34477,
+      "manga": {
+        "id": 34477,
+        "name": "Подземелье Вавилона"
+      }
+    }
+  },
+  {
     "id": 343366049,
     "card_id": 153409,
     "is_lock": 0,
@@ -33067,6 +32501,26 @@
     }
   },
   {
+    "id": 348448372,
+    "card_id": 78997,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 78997,
+      "name": "Лес",
+      "image": "FrbwIoR2Jo9BTi5mo8Pj0QlW7WTGyF.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 28250,
+      "manga": {
+        "id": 28250,
+        "name": "Я разведусь со старшим братом главной героини"
+      }
+    }
+  },
+  {
     "id": 348448444,
     "card_id": 231958,
     "is_lock": 0,
@@ -33363,6 +32817,46 @@
       "manga": {
         "id": 38630,
         "name": "Городской затаившийся дракон"
+      }
+    }
+  },
+  {
+    "id": 345917772,
+    "card_id": 27067,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 27067,
+      "name": "Анни",
+      "image": "i66cEp2ml3VPYWWn7U3Bdi4IENPI5d.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 11045,
+      "manga": {
+        "id": 11045,
+        "name": "Я — дитя этого дома"
+      }
+    }
+  },
+  {
+    "id": 345917773,
+    "card_id": 223944,
+    "is_lock": 0,
+    "is_not_tradable": 0,
+    "sort_index": 0,
+    "available_for_trade": true,
+    "card": {
+      "id": 223944,
+      "name": "Солнце",
+      "image": "s8AdiTeMMeStX7tWICSCtGvBwABzFb.png",
+      "rank": "E",
+      "sort_index": 0,
+      "manga_id": 33663,
+      "manga": {
+        "id": 33663,
+        "name": "Я отдыхаю, пока мои ученики культивируют!"
       }
     }
   },

@@ -5,7 +5,7 @@ import time
 from typing import Any, Dict, Optional
 import requests
 from bs4 import BeautifulSoup
-from config import BASE_URL, REQUEST_TIMEOUT
+from config import BASE_URL, REQUEST_TIMEOUT, MAX_CLUB_CARD_OWNERS
 from parsers import count_owners, count_wants
 from inventory import get_user_inventory
 from utils import extract_card_data
@@ -213,6 +213,9 @@ class BoostCardExtractor:
             owners_count = count_owners(self.session, card_id, force_accurate=False)
             wants_count = count_wants(self.session, card_id, force_accurate=False)
             
+            # НОВОЕ: Определяем, нужна ли автозамена
+            needs_replacement = owners_count > 0 and owners_count <= MAX_CLUB_CARD_OWNERS
+            
             return {
                 "name": card_name,
                 "id": instance_id,
@@ -221,7 +224,8 @@ class BoostCardExtractor:
                 "wanters_count": wants_count,
                 "owners_count": owners_count,
                 "card_url": f"{BASE_URL}/cards/{card_id}/users",
-                "timestamp": time.time()
+                "timestamp": time.time(),
+                "needs_replacement": needs_replacement  # НОВОЕ поле
             }
             
         except requests.RequestException:
@@ -244,3 +248,38 @@ def get_boost_card_info(
     """
     extractor = BoostCardExtractor(session)
     return extractor.get_card_info(boost_url)
+
+
+def replace_club_card(session: requests.Session) -> bool:
+    """
+    Заменяет карту в клубе через API.
+    
+    Args:
+        session: Сессия requests
+    
+    Returns:
+        True если успешно
+    """
+    url = f"{BASE_URL}/clubs/replace"
+    csrf_token = session.headers.get('X-CSRF-TOKEN', '')
+    
+    headers = {
+        "Accept": "*/*",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "X-CSRF-Token": csrf_token,
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": session.url if hasattr(session, 'url') else BASE_URL,
+        "Origin": BASE_URL,
+    }
+    
+    try:
+        response = session.post(
+            url,
+            headers=headers,
+            timeout=REQUEST_TIMEOUT
+        )
+        
+        return response.status_code == 200
+        
+    except requests.RequestException:
+        return False

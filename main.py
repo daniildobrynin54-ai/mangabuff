@@ -18,6 +18,8 @@ from card_selector import select_trade_card
 from owners_parser import process_owners_page_by_page, find_all_available_owners
 from monitor import start_boost_monitor
 from trade import send_trade_to_owner, cancel_all_sent_trades
+from card_replacement import check_and_replace_if_needed
+from daily_stats import DailyStatsManager
 from utils import (
     ensure_dir_exists,
     save_json,
@@ -46,6 +48,7 @@ class MangaBuffApp:
         self.monitor = None
         self.output_dir = OUTPUT_DIR
         self.inventory_manager = InventoryManager(self.output_dir)
+        self.stats_manager = DailyStatsManager(self.output_dir)
     
     def setup(self) -> bool:
         """
@@ -58,7 +61,7 @@ class MangaBuffApp:
         ensure_dir_exists(self.output_dir)
         
         # Авторизация
-        print("🔑 Вход в аккаунт...")
+        print("🔐 Вход в аккаунт...")
         self.session = login(self.args.email, self.args.password)
         
         if not self.session:
@@ -66,6 +69,10 @@ class MangaBuffApp:
             return False
         
         print_success("Авторизация успешна")
+        
+        # Выводим статистику
+        self.stats_manager.print_stats()
+        
         return True
     
     def load_inventory(self) -> Optional[list]:
@@ -108,6 +115,23 @@ class MangaBuffApp:
         
         print_success("Карточка для вклада:")
         print(f"   {format_card_info(boost_card)}")
+        
+        # НОВОЕ: Проверяем, нужна ли автозамена
+        if boost_card.get('needs_replacement', False):
+            print_warning(f"\n⚠️  Карта требует замены!")
+            print(f"   Владельцев: {boost_card.get('owners_count', '?')}")
+            
+            # Пытаемся заменить карту
+            new_card = check_and_replace_if_needed(
+                self.session,
+                self.args.boost_url,
+                boost_card,
+                self.output_dir
+            )
+            
+            # Если замена успешна - используем новую карту
+            if new_card:
+                boost_card = new_card
         
         # Сохраняем
         boost_path = os.path.join(self.output_dir, BOOST_CARD_FILE)
@@ -210,6 +234,28 @@ class MangaBuffApp:
             # Загружаем актуальную карту из файла
             current_boost_card = self._load_current_boost_card(boost_card)
             current_card_id = current_boost_card['card_id']
+            
+            # НОВОЕ: Проверяем автозамену перед началом обработки
+            if current_boost_card.get('needs_replacement', False):
+                print_warning(f"\n⚠️  Карта требует автозамены перед обработкой!")
+                
+                new_card = check_and_replace_if_needed(
+                    self.session,
+                    self.args.boost_url,
+                    current_boost_card,
+                    self.output_dir
+                )
+                
+                if new_card:
+                    # Используем новую карту
+                    current_boost_card = new_card
+                    current_card_id = new_card['card_id']
+                    
+                    # Обновляем в мониторе
+                    if self.monitor:
+                        self.monitor.current_card_id = current_card_id
+                else:
+                    print_info("Продолжаем с текущей картой")
             
             # Сбрасываем флаг изменения карты ПЕРЕД началом обработки
             if self.monitor:
@@ -377,7 +423,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
                  --user_id 12345 --boost_url https://mangabuff.ru/clubs/123/boost \\
                  --dry_run
 
-  # С мониторингом буста
+  # С мониторингом буста и автозаменой карт
   python main.py --email user@example.com --password pass123 \\
                  --user_id 12345 --boost_url https://mangabuff.ru/clubs/123/boost \\
                  --enable_monitor

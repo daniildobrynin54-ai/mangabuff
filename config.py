@@ -47,6 +47,13 @@ MAX_CARD_SELECTION_ATTEMPTS = 50
 # Пропуск первых владельцев на первой странице
 FIRST_PAGE_SKIP_OWNERS = 6
 
+# Новые настройки для дневных лимитов
+MAX_DAILY_DONATIONS = 50  # Максимум пожертвований в день
+MAX_DAILY_REPLACEMENTS = 10  # Максимум замен карты в день
+MAX_CLUB_CARD_OWNERS = 50  # Порог владельцев для автозамены
+DAILY_RESET_HOUR = 0  # Час сброса счетчиков (00:00 МСК)
+TIMEZONE_OFFSET = 3  # Часовой пояс МСК (UTC+3)
+
 # Директории
 OUTPUT_DIR = "created_files"
 
@@ -54,3 +61,4 @@ OUTPUT_DIR = "created_files"
 INVENTORY_FILE = "inventory.json"
 PARSED_INVENTORY_FILE = "parsed_inventory.json"
 BOOST_CARD_FILE = "boost_card.json"
+DAILY_STATS_FILE = "daily_stats.json"  # Новый файл для статистики
