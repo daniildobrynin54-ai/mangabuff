@@ -32,8 +32,7 @@ class TradeHistoryMonitor:
         self.debug = debug
         self.running = False
         self.thread = None
-        # 🔧 ИСПРАВЛЕНО: Храним статус каждого обмена
-        self.trade_statuses: Dict[int, str] = {}  # trade_id -> status
+        self.trade_statuses: Dict[int, str] = {}
         self.traded_away_cards: Set[int] = set()
     
     def _log(self, message: str) -> None:
@@ -49,14 +48,12 @@ class TradeHistoryMonitor:
             'cancelled' - отменен
             'pending' - в процессе
         """
-        # Проверяем наличие индикаторов статуса
         if trade_elem.select_one('.history__item--completed'):
             return 'completed'
         
         if trade_elem.select_one('.history__item--cancelled'):
             return 'cancelled'
         
-        # Проверяем текст статуса
         status_elem = trade_elem.select_one('.history__status')
         if status_elem:
             status_text = status_elem.get_text().lower()
@@ -119,14 +116,7 @@ class TradeHistoryMonitor:
             return []
     
     def check_and_remove_traded_cards(self) -> int:
-        """
-        🔧 ИСПРАВЛЕНО: Проверяет историю с учетом статусов обменов.
-        
-        Логика:
-        1. Если обмен новый и completed -> удаляем карту
-        2. Если обмен был completed, а стал cancelled -> возвращаем карту
-        3. Если обмен pending -> ничего не делаем
-        """
+        """Проверяет историю с учетом статусов обменов."""
         trades = self.fetch_recent_trades()
         
         if not trades:
@@ -143,9 +133,6 @@ class TradeHistoryMonitor:
             current_status = trade['status']
             previous_status = self.trade_statuses.get(trade_id)
             
-            # 🔧 НОВАЯ ЛОГИКА: Обрабатываем изменения статуса
-            
-            # Случай 1: Новый завершенный обмен -> удаляем карты
             if previous_status is None and current_status == 'completed':
                 self._log(f"Новый завершенный обмен: ID {trade_id}")
                 
@@ -162,7 +149,6 @@ class TradeHistoryMonitor:
                 
                 self.trade_statuses[trade_id] = 'completed'
             
-            # Случай 2: Обмен был completed, стал cancelled -> возвращаем карты
             elif previous_status == 'completed' and current_status == 'cancelled':
                 self._log(f"⚠️  Обмен {trade_id} отменен! Возвращаем карты в инвентарь")
                 
@@ -175,15 +161,12 @@ class TradeHistoryMonitor:
                 
                 self.trade_statuses[trade_id] = 'cancelled'
             
-            # Случай 3: Обмен pending -> просто обновляем статус
             elif previous_status != current_status:
                 self._log(f"Обмен {trade_id}: {previous_status} -> {current_status}")
                 self.trade_statuses[trade_id] = current_status
             
-            # Случай 4: Статус не изменился
             else:
                 if previous_status is None:
-                    # Первая загрузка - просто сохраняем статус
                     self._log(f"Обмен {trade_id}: начальный статус = {current_status}")
                     self.trade_statuses[trade_id] = current_status
                 else:
@@ -247,7 +230,6 @@ class TradeHistoryMonitor:
         """Основной цикл мониторинга."""
         self._log(f"Запущен мониторинг истории (каждые {check_interval}с)")
         
-        # 🔧 ИСПРАВЛЕНО: При старте загружаем начальное состояние
         initial_trades = self.fetch_recent_trades()
         for trade in initial_trades:
             self.trade_statuses[trade['trade_id']] = trade['status']
@@ -325,8 +307,7 @@ class TradeManager:
         self.debug = debug
         self.sent_trades: Set[tuple[int, int]] = set()
         self.limiter = get_rate_limiter()
-        # 🔧 НОВОЕ: Отслеживаем заблокированные карты (отправленные в обменах)
-        self.locked_cards: Set[int] = set()  # instance_id карт в активных обменах
+        self.locked_cards: Set[int] = set()
     
     def _log(self, message: str) -> None:
         if self.debug:
@@ -388,16 +369,7 @@ class TradeManager:
         partner_id: int,
         card_id: int
     ) -> Optional[int]:
-        """
-        Поиск instance_id с правильным offset.
-        
-        Args:
-            partner_id: ID партнера
-            card_id: ID карточки
-        
-        Returns:
-            Instance ID или None
-        """
+        """Поиск instance_id с правильным offset."""
         self._log(f"🔍 Поиск instance_id карты {card_id} у владельца {partner_id}...")
         
         try:
@@ -480,7 +452,7 @@ class TradeManager:
         my_instance_id: int,
         his_instance_id: int
     ) -> bool:
-        """Прямая отправка обмена через API."""
+        """🔧 ИСПРАВЛЕНО: Прямая отправка обмена через API."""
         url = f"{BASE_URL}/trades/create"
         headers = self._prepare_headers(receiver_id)
         
@@ -494,6 +466,11 @@ class TradeManager:
         self._log(f"  receiver_id: {receiver_id}")
         self._log(f"  my_instance_id: {my_instance_id}")
         self._log(f"  his_instance_id: {his_instance_id}")
+        
+        # 🔧 НОВОЕ: Проверяем блокировку ДО отправки
+        if my_instance_id in self.locked_cards:
+            self._log(f"⚠️  Карта {my_instance_id} уже заблокирована!")
+            return False
         
         try:
             self.limiter.wait_and_record()
@@ -513,15 +490,18 @@ class TradeManager:
                 self.limiter.pause_for_429()
                 return False
             
-            if self._is_success_response(response):
-                self._log("✅ Обмен успешно создан")
-                # 🔧 НОВОЕ: Блокируем карту
-                self.locked_cards.add(my_instance_id)
-                return True
-            
+            # 🔧 ИСПРАВЛЕНО: Обработка 422 ПЕРЕД блокировкой
             if response.status_code == 422:
                 self._log("❌ Карта уже участвует в обмене (422)")
+                # Не блокируем карту - она уже используется в другом обмене
                 return False
+            
+            if self._is_success_response(response):
+                self._log("✅ Обмен успешно создан")
+                # 🔧 Блокируем карту ТОЛЬКО при успехе
+                self.locked_cards.add(my_instance_id)
+                self._log(f"🔒 Карта {my_instance_id} заблокирована (всего: {len(self.locked_cards)})")
+                return True
             
             self._log(f"❌ Обмен не удался: {response.status_code}")
             return False
@@ -535,7 +515,7 @@ class TradeManager:
         return (receiver_id, card_id) in self.sent_trades
     
     def is_my_card_locked(self, instance_id: int) -> bool:
-        """🔧 НОВОЕ: Проверяет, заблокирована ли карта."""
+        """Проверяет, заблокирована ли карта."""
         return instance_id in self.locked_cards
     
     def mark_trade_sent(self, receiver_id: int, card_id: int) -> None:
@@ -543,18 +523,30 @@ class TradeManager:
         self.sent_trades.add((receiver_id, card_id))
         self._log(f"Обмен помечен: owner={receiver_id}, card_id={card_id}")
     
+    def unlock_card(self, instance_id: int) -> None:
+        """
+        🔧 НОВОЕ: Разблокирует конкретную карту.
+        
+        Args:
+            instance_id: ID экземпляра карты
+        """
+        if instance_id in self.locked_cards:
+            self.locked_cards.discard(instance_id)
+            self._log(f"🔓 Карта {instance_id} разблокирована (осталось: {len(self.locked_cards)})")
+    
     def clear_sent_trades(self) -> None:
         """🔧 ОБНОВЛЕНО: Очищает список отправленных обменов и разблокирует карты."""
         count = len(self.sent_trades)
+        locked_count = len(self.locked_cards)
         self.sent_trades.clear()
         self.locked_cards.clear()
-        self._log(f"Список обменов очищен ({count} записей), карты разблокированы")
+        self._log(f"Список обменов очищен ({count} записей), карты разблокированы ({locked_count} шт)")
     
     def cancel_all_sent_trades(
         self,
         history_monitor: Optional[TradeHistoryMonitor] = None
     ) -> bool:
-        """Отменяет все обмены."""
+        """🔧 ИСПРАВЛЕНО: Отменяет все обмены."""
         url = f"{BASE_URL}/trades/rejectAll?type_trade=sender"
         
         headers = {
@@ -563,6 +555,7 @@ class TradeManager:
         }
         
         self._log("Отмена всех обменов...")
+        self._log(f"Заблокированных карт до отмены: {len(self.locked_cards)}")
         
         try:
             response = self.session.get(
@@ -575,6 +568,7 @@ class TradeManager:
             self._log(f"Response status: {response.status_code}")
             
             if response.status_code == 200:
+                # 🔧 ИСПРАВЛЕНО: Очищаем ПЕРЕД проверкой истории
                 self.clear_sent_trades()
                 time.sleep(2)
                 
