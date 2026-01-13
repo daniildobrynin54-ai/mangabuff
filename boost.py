@@ -2,13 +2,168 @@
 
 import re
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import requests
 from bs4 import BeautifulSoup
 from config import BASE_URL, REQUEST_TIMEOUT, MAX_CLUB_CARD_OWNERS
 from parsers import count_owners, count_wants
 from inventory import get_user_inventory
 from utils import extract_card_data
+
+
+class ClubMemberParser:
+    """Парсер участников клуба с буст-картой."""
+    
+    def __init__(self, session: requests.Session):
+        """
+        Инициализация парсера.
+        
+        Args:
+            session: Сессия requests
+        """
+        self.session = session
+    
+    def extract_user_id_from_avatar(self, avatar_element) -> Optional[str]:
+        """
+        Извлекает ID пользователя из элемента аватара.
+        
+        Args:
+            avatar_element: Элемент BeautifulSoup с аватаром
+        
+        Returns:
+            ID пользователя или None
+        """
+        # Ищем ссылку внутри аватара
+        link = avatar_element.find('a', href=True)
+        
+        if not link:
+            # Проверяем, может сам элемент является ссылкой
+            if avatar_element.name == 'a' and avatar_element.has_attr('href'):
+                link = avatar_element
+            else:
+                return None
+        
+        href = link.get('href', '')
+        # Формат: /users/101264
+        match = re.search(r'/users/(\d+)', href)
+        
+        return match.group(1) if match else None
+    
+    def get_user_nickname(self, user_id: str) -> Optional[str]:
+        """
+        Получает никнейм пользователя со страницы профиля.
+        
+        Args:
+            user_id: ID пользователя
+        
+        Returns:
+            Никнейм или None
+        """
+        url = f"{BASE_URL}/users/{user_id}"
+        
+        try:
+            response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+            
+            if response.status_code != 200:
+                return None
+            
+            soup = BeautifulSoup(response.text, "html.parser")
+            
+            # Ищем никнейм в различных местах
+            selectors = [
+                '.profile__name',
+                '.profile-name',
+                '[data-name]',
+                'div.profile h1',
+                'div.profile h2'
+            ]
+            
+            for selector in selectors:
+                element = soup.select_one(selector)
+                if element:
+                    # Пробуем получить из атрибута data-name
+                    if element.has_attr('data-name'):
+                        nickname = element.get('data-name', '').strip()
+                        if nickname:
+                            return nickname
+                    
+                    # Пробуем получить из текста
+                    nickname = element.get_text(strip=True)
+                    if nickname:
+                        return nickname
+            
+            return None
+            
+        except requests.RequestException:
+            return None
+    
+    def parse_club_members_with_card(self, boost_url: str) -> List[Dict[str, str]]:
+        """
+        Парсит участников клуба, у которых есть буст-карта.
+        
+        Args:
+            boost_url: URL страницы буста
+        
+        Returns:
+            Список словарей {user_id, nickname}
+        """
+        # Нормализуем URL
+        if not boost_url.startswith("http"):
+            boost_url = f"{BASE_URL}{boost_url}"
+        
+        try:
+            response = self.session.get(boost_url, timeout=REQUEST_TIMEOUT)
+            
+            if response.status_code != 200:
+                return []
+            
+            soup = BeautifulSoup(response.text, "html.parser")
+            
+            # Ищем аватары участников клуба
+            # Возможные селекторы для аватаров
+            avatar_selectors = [
+                '.club-boost__avatar',
+                '.club-boost-avatar',
+                'a.club-boost__avatar',
+                'div.club-boost__user'
+            ]
+            
+            avatars = []
+            for selector in avatar_selectors:
+                found = soup.select(selector)
+                if found:
+                    avatars.extend(found)
+            
+            if not avatars:
+                return []
+            
+            members = []
+            seen_ids = set()
+            
+            for avatar in avatars:
+                user_id = self.extract_user_id_from_avatar(avatar)
+                
+                if not user_id or user_id in seen_ids:
+                    continue
+                
+                seen_ids.add(user_id)
+                
+                # Получаем никнейм
+                nickname = self.get_user_nickname(user_id)
+                
+                if nickname:
+                    members.append({
+                        'user_id': user_id,
+                        'nickname': nickname
+                    })
+                    
+                # Небольшая задержка между запросами профилей
+                time.sleep(0.3)
+            
+            return members
+            
+        except requests.RequestException:
+            return []
 
 
 class BoostCardExtractor:
@@ -22,6 +177,7 @@ class BoostCardExtractor:
             session: Сессия requests
         """
         self.session = session
+        self.member_parser = ClubMemberParser(session)
     
     def extract_card_id_from_button(self, soup: BeautifulSoup) -> Optional[str]:
         """
@@ -42,6 +198,28 @@ class BoostCardExtractor:
         match = re.search(r"/cards/(\d+)", href)
         
         return match.group(1) if match else None
+    
+    def extract_card_image_from_boost_page(self, soup: BeautifulSoup) -> Optional[str]:
+        """
+        🆕 НОВОЕ: Извлекает URL изображения карты со страницы буста.
+        
+        Args:
+            soup: Объект BeautifulSoup со страницей буста
+        
+        Returns:
+            URL изображения или None
+        """
+        img_elem = soup.select_one('.club-boost__image img')
+        
+        if img_elem:
+            img_src = img_elem.get('src', '')
+            if img_src:
+                # Если относительный путь - делаем абсолютным
+                if img_src.startswith('/'):
+                    return f"{BASE_URL}{img_src}"
+                return img_src
+        
+        return None
     
     def fetch_card_page_info(
         self,
@@ -194,6 +372,9 @@ class BoostCardExtractor:
             if not card_id:
                 return None
             
+            # 🆕 НОВОЕ: Извлекаем URL изображения карты
+            image_url = self.extract_card_image_from_boost_page(soup)
+            
             # Получаем информацию со страницы карты
             card_name, card_rank = self.fetch_card_page_info(card_id)
             instance_id = 0
@@ -213,8 +394,11 @@ class BoostCardExtractor:
             owners_count = count_owners(self.session, card_id, force_accurate=False)
             wants_count = count_wants(self.session, card_id, force_accurate=False)
             
-            # НОВОЕ: Определяем, нужна ли автозамена
+            # Определяем, нужна ли автозамена
             needs_replacement = owners_count > 0 and owners_count <= MAX_CLUB_CARD_OWNERS
+            
+            # Парсим участников клуба с этой картой
+            club_members = self.member_parser.parse_club_members_with_card(boost_url)
             
             return {
                 "name": card_name,
@@ -225,7 +409,9 @@ class BoostCardExtractor:
                 "owners_count": owners_count,
                 "card_url": f"{BASE_URL}/cards/{card_id}/users",
                 "timestamp": time.time(),
-                "needs_replacement": needs_replacement  # НОВОЕ поле
+                "needs_replacement": needs_replacement,
+                "club_members": club_members,
+                "image_url": image_url  # 🆕 НОВОЕ: URL изображения карты
             }
             
         except requests.RequestException:
@@ -283,3 +469,23 @@ def replace_club_card(session: requests.Session) -> bool:
         
     except requests.RequestException:
         return False
+
+
+def format_club_members_info(members: List[Dict[str, str]]) -> str:
+    """
+    Форматирует информацию об участниках клуба.
+    
+    Args:
+        members: Список словарей с информацией об участниках
+    
+    Returns:
+        Отформатированная строка
+    """
+    if not members:
+        return "В клубе ни у кого нет"
+    
+    if len(members) == 1:
+        return f"В клубе имеется у: {members[0]['nickname']}"
+    
+    nicknames = [m['nickname'] for m in members]
+    return f"В клубе имеется у: {', '.join(nicknames)}"

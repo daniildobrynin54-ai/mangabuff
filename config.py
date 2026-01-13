@@ -1,4 +1,4 @@
-"""Конфигурация приложения MangaBuff с поддержкой прокси и rate limiting."""
+"""Конфигурация приложения MangaBuff с поддержкой прокси, rate limiting и Telegram."""
 
 # API настройки
 BASE_URL = "https://mangabuff.ru"
@@ -7,6 +7,12 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101
 # Настройки прокси
 PROXY_ENABLED = True  # Включить/выключить прокси
 PROXY_URL = None  # Будет установлен из аргументов командной строки или переменной окружения
+
+# Настройки Telegram
+TELEGRAM_ENABLED = True  # Включить/выключить уведомления
+TELEGRAM_BOT_TOKEN = "8300878628:AAFe4N9HqfrZWt7ncdJZCSlGQbFjoUXAr7U"  # Токен бота (получить у @BotFather)
+TELEGRAM_CHAT_ID = None  # ID чата/группы
+TELEGRAM_THREAD_ID = None  # ID темы в группе (опционально)
 
 # Настройки пагинации
 OWNERS_PER_PAGE = 36

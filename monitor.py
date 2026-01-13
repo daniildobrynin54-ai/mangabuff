@@ -1,4 +1,4 @@
-"""Мониторинг страницы буста клуба."""
+"""Мониторинг страницы буста клуба с Telegram уведомлениями."""
 
 import os
 import threading
@@ -14,7 +14,7 @@ from config import (
     MONITOR_CHECK_INTERVAL,
     MONITOR_STATUS_INTERVAL
 )
-from boost import get_boost_card_info, replace_club_card
+from boost import get_boost_card_info, replace_club_card, format_club_members_info
 from trade import cancel_all_sent_trades, TradeManager
 from daily_stats import DailyStatsManager
 from utils import save_json, load_json, print_section, print_success, print_warning
@@ -28,7 +28,8 @@ class BoostMonitor:
         session: requests.Session,
         club_url: str,
         stats_manager: DailyStatsManager,
-        output_dir: str = OUTPUT_DIR
+        output_dir: str = OUTPUT_DIR,
+        telegram_notifier=None  # 🆕 НОВОЕ: Telegram бот
     ):
         """
         Инициализация монитора.
@@ -38,11 +39,13 @@ class BoostMonitor:
             club_url: URL страницы клуба
             stats_manager: Менеджер статистики
             output_dir: Директория для файлов
+            telegram_notifier: TelegramNotifier для отправки уведомлений
         """
         self.session = session
         self.club_url = club_url
         self.output_dir = output_dir
         self.stats_manager = stats_manager
+        self.telegram_notifier = telegram_notifier  # 🆕 НОВОЕ
         self.running = False
         self.thread = None
         self.boost_available = False
@@ -208,6 +211,9 @@ class BoostMonitor:
                 # Выводим информацию о новой карте
                 self._print_card_info(new_boost_card, new_instance_id, is_new=True)
                 
+                # 🆕 НОВОЕ: Отправляем уведомление в Telegram
+                self._send_telegram_notification(new_boost_card)
+                
                 # Сохраняем НОВУЮ карту
                 self._save_boost_card(new_boost_card)
                 self.current_card_id = new_card_id
@@ -265,6 +271,9 @@ class BoostMonitor:
             # Выводим информацию
             self._print_card_info(new_boost_card, new_instance_id, is_new=True)
             
+            # 🆕 НОВОЕ: Отправляем уведомление в Telegram
+            self._send_telegram_notification(new_boost_card)
+            
             # Сохраняем новую карту
             self._save_boost_card(new_boost_card)
             self.current_card_id = new_card_id
@@ -280,13 +289,42 @@ class BoostMonitor:
             print_warning(f"Ошибка при обработке смены карты: {e}")
             return False
     
+    def _send_telegram_notification(self, boost_card: dict) -> None:
+        """
+        🆕 НОВОЕ: Отправляет уведомление в Telegram о смене карты.
+        
+        Args:
+            boost_card: Информация о новой карте
+        """
+        if not self.telegram_notifier or not self.telegram_notifier.is_enabled():
+            return
+        
+        try:
+            club_members = boost_card.get('club_members', [])
+            
+            success = self.telegram_notifier.notify_card_change(
+                card_info=boost_card,
+                boost_url=self.club_url,
+                club_members=club_members
+            )
+            
+            if success:
+                print("📱 Уведомление отправлено в Telegram")
+            else:
+                print("⚠️  Не удалось отправить уведомление в Telegram")
+                
+        except Exception as e:
+            print(f"⚠️  Ошибка отправки Telegram уведомления: {e}")
+    
     def _save_boost_card(self, boost_card: dict) -> None:
         """Сохраняет информацию о буст-карте."""
         filepath = os.path.join(self.output_dir, BOOST_CARD_FILE)
         save_json(filepath, boost_card)
     
     def _print_card_info(self, boost_card: dict, instance_id: int, is_new: bool = False) -> None:
-        """Выводит информацию о карте."""
+        """
+        Выводит информацию о карте с участниками клуба.
+        """
         if is_new:
             print_section("🎁 НОВАЯ КАРТА ДЛЯ ВКЛАДА!")
         else:
@@ -301,6 +339,11 @@ class BoostMonitor:
         print(f"   Название: {name}")
         print(f"   ID карты: {card_id} | Instance ID: {instance_id} | Ранг: {rank}")
         print(f"   Владельцев: {owners} | Желающих: {wanters}")
+        
+        # Выводим информацию об участниках клуба
+        club_members = boost_card.get('club_members', [])
+        members_info = format_club_members_info(club_members)
+        print(f"   {members_info}")
         
         if is_new:
             filepath = os.path.join(self.output_dir, BOOST_CARD_FILE)
@@ -355,6 +398,13 @@ class BoostMonitor:
         print(f"\n🔄 Запущен мониторинг страницы: {self.club_url}")
         print(f"   Проверка каждые {MONITOR_CHECK_INTERVAL} секунд...")
         print("   Отслеживание: буст + смена карты в клубе")
+        
+        # 🆕 НОВОЕ: Информация о Telegram
+        if self.telegram_notifier and self.telegram_notifier.is_enabled():
+            print("   📱 Telegram уведомления: ВКЛЮЧЕНЫ")
+        else:
+            print("   📱 Telegram уведомления: ВЫКЛЮЧЕНЫ")
+        
         print("   Нажмите Ctrl+C для остановки\n")
         
         # Выводим статистику при старте (обновляем с сервера)
@@ -429,7 +479,8 @@ def start_boost_monitor(
     session: requests.Session,
     club_url: str,
     stats_manager: DailyStatsManager,
-    output_dir: str = OUTPUT_DIR
+    output_dir: str = OUTPUT_DIR,
+    telegram_notifier=None  # 🆕 НОВОЕ
 ) -> BoostMonitor:
     """
     Удобная функция для запуска мониторинга.
@@ -439,10 +490,17 @@ def start_boost_monitor(
         club_url: URL страницы клуба
         stats_manager: Менеджер статистики
         output_dir: Директория для файлов
+        telegram_notifier: TelegramNotifier для уведомлений
     
     Returns:
         Объект BoostMonitor
     """
-    monitor = BoostMonitor(session, club_url, stats_manager, output_dir)
+    monitor = BoostMonitor(
+        session,
+        club_url,
+        stats_manager,
+        output_dir,
+        telegram_notifier  # 🆕 НОВОЕ
+    )
     monitor.start()
     return monitor
