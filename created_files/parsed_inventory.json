@@ -1,0 +1,1262 @@
+{
+  "65199": {
+    "card_id": 65199,
+    "name": "Клэр",
+    "rank": "D",
+    "wanters_count": 16,
+    "timestamp": 1768334746.369556,
+    "cached_at": "2026-01-13T22:05:46.369557",
+    "instance_id": 39254804
+  },
+  "278132": {
+    "card_id": 278132,
+    "name": "Цинь Сяо",
+    "rank": "D",
+    "wanters_count": 63,
+    "timestamp": 1768334751.193012,
+    "cached_at": "2026-01-13T22:05:51.193013",
+    "instance_id": 316216252
+  },
+  "262118": {
+    "card_id": 262118,
+    "name": "Пейзаж",
+    "rank": "D",
+    "wanters_count": 32,
+    "timestamp": 1768334751.687593,
+    "cached_at": "2026-01-13T22:05:51.687594",
+    "instance_id": 363983334
+  },
+  "197708": {
+    "card_id": 197708,
+    "name": "Карлос Авеллар",
+    "rank": "D",
+    "wanters_count": 106,
+    "timestamp": 1768334755.0417624,
+    "cached_at": "2026-01-13T22:05:55.041763",
+    "instance_id": 247123737
+  },
+  "55490": {
+    "card_id": 55490,
+    "name": "Фараон",
+    "rank": "D",
+    "wanters_count": 48,
+    "timestamp": 1768334756.3261898,
+    "cached_at": "2026-01-13T22:05:56.326191",
+    "instance_id": 178368227
+  },
+  "174147": {
+    "card_id": 174147,
+    "name": "Танг Вутонг",
+    "rank": "D",
+    "wanters_count": 81,
+    "timestamp": 1768334757.9361253,
+    "cached_at": "2026-01-13T22:05:57.936126",
+    "instance_id": 132721904
+  },
+  "289436": {
+    "card_id": 289436,
+    "name": "Мариса Кирисаме",
+    "rank": "D",
+    "wanters_count": 56,
+    "timestamp": 1768334758.3335154,
+    "cached_at": "2026-01-13T22:05:58.333517",
+    "instance_id": 336176655
+  },
+  "95323": {
+    "card_id": 95323,
+    "name": "Рэн",
+    "rank": "D",
+    "wanters_count": 180,
+    "timestamp": 1768334761.5891614,
+    "cached_at": "2026-01-13T22:06:01.589163",
+    "instance_id": 160875568
+  },
+  "64349": {
+    "card_id": 64349,
+    "name": "Альянс \"Бездна\"",
+    "rank": "D",
+    "wanters_count": 24,
+    "timestamp": 1768334761.9838593,
+    "cached_at": "2026-01-13T22:06:01.983860",
+    "instance_id": 73031781
+  },
+  "119008": {
+    "card_id": 119008,
+    "name": "Тука Люна Марсо",
+    "rank": "D",
+    "wanters_count": 75,
+    "timestamp": 1768334763.5529912,
+    "cached_at": "2026-01-13T22:06:03.552992",
+    "instance_id": 360385114
+  },
+  "37566": {
+    "card_id": 37566,
+    "name": "Голем",
+    "rank": "D",
+    "wanters_count": 37,
+    "timestamp": 1768334764.0978284,
+    "cached_at": "2026-01-13T22:06:04.097830",
+    "instance_id": 67375702
+  },
+  "120831": {
+    "card_id": 120831,
+    "name": "Луна",
+    "rank": "D",
+    "wanters_count": 7,
+    "timestamp": 1768334766.2477064,
+    "cached_at": "2026-01-13T22:06:06.247707",
+    "instance_id": 202386299
+  },
+  "230392": {
+    "card_id": 230392,
+    "name": "Чжу А Ри",
+    "rank": "D",
+    "wanters_count": 88,
+    "timestamp": 1768334793.4021559,
+    "cached_at": "2026-01-13T22:06:33.402157",
+    "instance_id": 234094168
+  },
+  "94060": {
+    "card_id": 94060,
+    "name": "Тэнка",
+    "rank": "D",
+    "wanters_count": 188,
+    "timestamp": 1768334798.0631967,
+    "cached_at": "2026-01-13T22:06:38.063198",
+    "instance_id": 138543288
+  },
+  "130149": {
+    "card_id": 130149,
+    "name": "Алессандро XVIII",
+    "rank": "D",
+    "wanters_count": 49,
+    "timestamp": 1768334798.6772015,
+    "cached_at": "2026-01-13T22:06:38.677203",
+    "instance_id": 350290298
+  },
+  "144630": {
+    "card_id": 144630,
+    "name": "Айрон и Лулу",
+    "rank": "D",
+    "wanters_count": 57,
+    "timestamp": 1768334799.2895722,
+    "cached_at": "2026-01-13T22:06:39.289573",
+    "instance_id": 214017337
+  },
+  "70070": {
+    "card_id": 70070,
+    "name": "Сена и Люси",
+    "rank": "D",
+    "wanters_count": 36,
+    "timestamp": 1768334801.1984098,
+    "cached_at": "2026-01-13T22:06:41.198410",
+    "instance_id": 363976900
+  },
+  "112876": {
+    "card_id": 112876,
+    "name": "Мелоди",
+    "rank": "D",
+    "wanters_count": 80,
+    "timestamp": 1768334806.7003276,
+    "cached_at": "2026-01-13T22:06:46.700328",
+    "instance_id": 325819743
+  },
+  "88259": {
+    "card_id": 88259,
+    "name": "Рэт Леймонд",
+    "rank": "D",
+    "wanters_count": 56,
+    "timestamp": 1768334807.0872228,
+    "cached_at": "2026-01-13T22:06:47.087223",
+    "instance_id": 337827488
+  },
+  "233404": {
+    "card_id": 233404,
+    "name": "Марин",
+    "rank": "D",
+    "wanters_count": 77,
+    "timestamp": 1768334809.0610175,
+    "cached_at": "2026-01-13T22:06:49.061019",
+    "instance_id": 232036299
+  },
+  "134744": {
+    "card_id": 134744,
+    "name": "Хиджирикава Масато",
+    "rank": "D",
+    "wanters_count": 35,
+    "timestamp": 1768334810.0727336,
+    "cached_at": "2026-01-13T22:06:50.072736",
+    "instance_id": 149493630
+  },
+  "205452": {
+    "card_id": 205452,
+    "name": "Луна",
+    "rank": "D",
+    "wanters_count": 14,
+    "timestamp": 1768334810.4804265,
+    "cached_at": "2026-01-13T22:06:50.480428",
+    "instance_id": 252049165
+  },
+  "307376": {
+    "card_id": 307376,
+    "name": "Здание",
+    "rank": "E",
+    "wanters_count": 0,
+    "timestamp": 1768334902.5673656,
+    "cached_at": "2026-01-13T22:08:22.567366",
+    "instance_id": 368080532
+  },
+  "54716": {
+    "card_id": 54716,
+    "name": "Джесси",
+    "rank": "E",
+    "wanters_count": 83,
+    "timestamp": 1768334911.064196,
+    "cached_at": "2026-01-13T22:08:31.064197",
+    "instance_id": 363208309
+  },
+  "24583": {
+    "card_id": 24583,
+    "name": "Ли Ён Сук",
+    "rank": "E",
+    "wanters_count": 2,
+    "timestamp": 1768334912.0328817,
+    "cached_at": "2026-01-13T22:08:32.032882",
+    "instance_id": 362435962
+  },
+  "20045": {
+    "card_id": 20045,
+    "name": "Ю и Силань",
+    "rank": "E",
+    "wanters_count": 39,
+    "timestamp": 1768334926.8667846,
+    "cached_at": "2026-01-13T22:08:46.866785",
+    "instance_id": 320968037
+  },
+  "288505": {
+    "card_id": 288505,
+    "name": "Рианна",
+    "rank": "E",
+    "wanters_count": 9,
+    "timestamp": 1768334927.2524905,
+    "cached_at": "2026-01-13T22:08:47.252491",
+    "instance_id": 353003867
+  },
+  "274584": {
+    "card_id": 274584,
+    "name": "Храм",
+    "rank": "E",
+    "wanters_count": 3,
+    "timestamp": 1768334941.799877,
+    "cached_at": "2026-01-13T22:09:01.799878",
+    "instance_id": 362436054
+  },
+  "76059": {
+    "card_id": 76059,
+    "name": "Печенье",
+    "rank": "E",
+    "wanters_count": 45,
+    "timestamp": 1768334969.0841203,
+    "cached_at": "2026-01-13T22:09:29.084121",
+    "instance_id": 320966975
+  },
+  "276342": {
+    "card_id": 276342,
+    "name": "Йон Хён Са",
+    "rank": "E",
+    "wanters_count": 17,
+    "timestamp": 1768334969.6288865,
+    "cached_at": "2026-01-13T22:09:29.628887",
+    "instance_id": 362435748
+  },
+  "94233": {
+    "card_id": 94233,
+    "name": "Ячихо Адзума",
+    "rank": "D",
+    "wanters_count": 186,
+    "timestamp": 1768334982.9455974,
+    "cached_at": "2026-01-13T22:09:42.945599",
+    "instance_id": 167844660
+  },
+  "42793": {
+    "card_id": 42793,
+    "name": "Линь Си",
+    "rank": "D",
+    "wanters_count": 39,
+    "timestamp": 1768335013.5180216,
+    "cached_at": "2026-01-13T22:10:13.518023",
+    "instance_id": 184190395
+  },
+  "126077": {
+    "card_id": 126077,
+    "name": "Стрелок с Черной Скалы",
+    "rank": "D",
+    "wanters_count": 44,
+    "timestamp": 1768335030.0154293,
+    "cached_at": "2026-01-13T22:10:30.015430",
+    "instance_id": 158601804
+  },
+  "130371": {
+    "card_id": 130371,
+    "name": "Тео",
+    "rank": "D",
+    "wanters_count": 11,
+    "timestamp": 1768335064.427077,
+    "cached_at": "2026-01-13T22:11:04.427078",
+    "instance_id": 77673794
+  },
+  "94879": {
+    "card_id": 94879,
+    "name": "Храм",
+    "rank": "E",
+    "wanters_count": 510,
+    "timestamp": 1768335087.2841249,
+    "cached_at": "2026-01-13T22:11:27.284126",
+    "instance_id": 320644943
+  },
+  "233560": {
+    "card_id": 233560,
+    "name": "Котоминэ Кирэй",
+    "rank": "E",
+    "wanters_count": 127,
+    "timestamp": 1768335088.946357,
+    "cached_at": "2026-01-13T22:11:28.946359",
+    "instance_id": 363975159
+  },
+  "72793": {
+    "card_id": 72793,
+    "name": "Хрустальный дворец",
+    "rank": "E",
+    "wanters_count": 18,
+    "timestamp": 1768335109.0167525,
+    "cached_at": "2026-01-13T22:11:49.016754",
+    "instance_id": 348506264
+  },
+  "303785": {
+    "card_id": 303785,
+    "name": "Часы",
+    "rank": "E",
+    "wanters_count": 76,
+    "timestamp": 1768335123.5159416,
+    "cached_at": "2026-01-13T22:12:03.515942",
+    "instance_id": 345058986
+  },
+  "267485": {
+    "card_id": 267485,
+    "name": "Huntrix",
+    "rank": "E",
+    "wanters_count": 510,
+    "timestamp": 1768335138.8888085,
+    "cached_at": "2026-01-13T22:12:18.888809",
+    "instance_id": 368080299
+  },
+  "130271": {
+    "card_id": 130271,
+    "name": "Лия",
+    "rank": "E",
+    "wanters_count": 270,
+    "timestamp": 1768335139.2760336,
+    "cached_at": "2026-01-13T22:12:19.276035",
+    "instance_id": 341280729
+  },
+  "187826": {
+    "card_id": 187826,
+    "name": "Револьвер",
+    "rank": "E",
+    "wanters_count": 9,
+    "timestamp": 1768335154.37828,
+    "cached_at": "2026-01-13T22:12:34.378281",
+    "instance_id": 361227227
+  },
+  "63546": {
+    "card_id": 63546,
+    "name": "Валенсия Сальватор",
+    "rank": "C",
+    "wanters_count": 3,
+    "timestamp": 1768335168.971329,
+    "cached_at": "2026-01-13T22:12:48.971330",
+    "instance_id": 396988207
+  },
+  "93773": {
+    "card_id": 93773,
+    "name": "Руна Сасаки",
+    "rank": "C",
+    "wanters_count": 178,
+    "timestamp": 1768335174.3730717,
+    "cached_at": "2026-01-13T22:12:54.373072",
+    "instance_id": 387247116
+  },
+  "252670": {
+    "card_id": 252670,
+    "name": "Лан Лан",
+    "rank": "C",
+    "wanters_count": 50,
+    "timestamp": 1768335175.0855265,
+    "cached_at": "2026-01-13T22:12:55.085528",
+    "instance_id": 321146290
+  },
+  "80548": {
+    "card_id": 80548,
+    "name": "Тесей|Лионель",
+    "rank": "C",
+    "wanters_count": 32,
+    "timestamp": 1768335177.1677072,
+    "cached_at": "2026-01-13T22:12:57.167708",
+    "instance_id": 395049494
+  },
+  "7361": {
+    "card_id": 7361,
+    "name": "Мари и Раэль",
+    "rank": "C",
+    "wanters_count": 13,
+    "timestamp": 1768335177.6782732,
+    "cached_at": "2026-01-13T22:12:57.678274",
+    "instance_id": 392913010
+  },
+  "29615": {
+    "card_id": 29615,
+    "name": "Лена",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335178.6925719,
+    "cached_at": "2026-01-13T22:12:58.692573",
+    "instance_id": 61505764
+  },
+  "165964": {
+    "card_id": 165964,
+    "name": "Бикси",
+    "rank": "C",
+    "wanters_count": 103,
+    "timestamp": 1768335182.935889,
+    "cached_at": "2026-01-13T22:13:02.935890",
+    "instance_id": 388403474
+  },
+  "194872": {
+    "card_id": 194872,
+    "name": "Рейвлер",
+    "rank": "C",
+    "wanters_count": 9,
+    "timestamp": 1768335183.5119545,
+    "cached_at": "2026-01-13T22:13:03.511955",
+    "instance_id": 395049180
+  },
+  "31876": {
+    "card_id": 31876,
+    "name": "Лукас Север",
+    "rank": "C",
+    "wanters_count": 0,
+    "timestamp": 1768335184.1202366,
+    "cached_at": "2026-01-13T22:13:04.120237",
+    "instance_id": 63784624
+  },
+  "157364": {
+    "card_id": 157364,
+    "name": "Токийские кошечки",
+    "rank": "C",
+    "wanters_count": 34,
+    "timestamp": 1768335186.3963206,
+    "cached_at": "2026-01-13T22:13:06.396321",
+    "instance_id": 148908116
+  },
+  "173032": {
+    "card_id": 173032,
+    "name": "Семья Беркио",
+    "rank": "C",
+    "wanters_count": 39,
+    "timestamp": 1768335187.7439265,
+    "cached_at": "2026-01-13T22:13:07.743927",
+    "instance_id": 368984087
+  },
+  "305037": {
+    "card_id": 305037,
+    "name": "Рауру",
+    "rank": "C",
+    "wanters_count": 37,
+    "timestamp": 1768335188.7467663,
+    "cached_at": "2026-01-13T22:13:08.746767",
+    "instance_id": 317705845
+  },
+  "182218": {
+    "card_id": 182218,
+    "name": "Юука Нэкота",
+    "rank": "C",
+    "wanters_count": 6,
+    "timestamp": 1768335189.1161003,
+    "cached_at": "2026-01-13T22:13:09.116102",
+    "instance_id": 389413634
+  },
+  "154898": {
+    "card_id": 154898,
+    "name": "Эмили",
+    "rank": "C",
+    "wanters_count": 0,
+    "timestamp": 1768335189.915834,
+    "cached_at": "2026-01-13T22:13:09.915835",
+    "instance_id": 395049676
+  },
+  "88273": {
+    "card_id": 88273,
+    "name": "Мироку и Коити",
+    "rank": "C",
+    "wanters_count": 15,
+    "timestamp": 1768335191.008929,
+    "cached_at": "2026-01-13T22:13:11.008930",
+    "instance_id": 396989079
+  },
+  "81301": {
+    "card_id": 81301,
+    "name": "Михаэль",
+    "rank": "C",
+    "wanters_count": 12,
+    "timestamp": 1768335193.339242,
+    "cached_at": "2026-01-13T22:13:13.339243",
+    "instance_id": 49684476
+  },
+  "234447": {
+    "card_id": 234447,
+    "name": "Сан Джин",
+    "rank": "C",
+    "wanters_count": 47,
+    "timestamp": 1768335196.4255576,
+    "cached_at": "2026-01-13T22:13:16.425559",
+    "instance_id": 392913218
+  },
+  "54488": {
+    "card_id": 54488,
+    "name": "Лексия",
+    "rank": "C",
+    "wanters_count": 20,
+    "timestamp": 1768335198.8058038,
+    "cached_at": "2026-01-13T22:13:18.805805",
+    "instance_id": 396988056
+  },
+  "48447": {
+    "card_id": 48447,
+    "name": "Натан Лейланд",
+    "rank": "C",
+    "wanters_count": 0,
+    "timestamp": 1768335199.2250013,
+    "cached_at": "2026-01-13T22:13:19.225002",
+    "instance_id": 396989148
+  },
+  "56848": {
+    "card_id": 56848,
+    "name": "Лисана",
+    "rank": "C",
+    "wanters_count": 5,
+    "timestamp": 1768335199.6467698,
+    "cached_at": "2026-01-13T22:13:19.646770",
+    "instance_id": 392912136
+  },
+  "45750": {
+    "card_id": 45750,
+    "name": "Луиза",
+    "rank": "C",
+    "wanters_count": 34,
+    "timestamp": 1768335201.5703027,
+    "cached_at": "2026-01-13T22:13:21.570303",
+    "instance_id": 83720146
+  },
+  "330493": {
+    "card_id": 330493,
+    "name": "Томоэ Мами",
+    "rank": "C",
+    "wanters_count": 84,
+    "timestamp": 1768335203.8975816,
+    "cached_at": "2026-01-13T22:13:23.897582",
+    "instance_id": 395049738
+  },
+  "79584": {
+    "card_id": 79584,
+    "name": "Ворона",
+    "rank": "C",
+    "wanters_count": 50,
+    "timestamp": 1768335205.2644877,
+    "cached_at": "2026-01-13T22:13:25.264489",
+    "instance_id": 190666240
+  },
+  "46409": {
+    "card_id": 46409,
+    "name": "Окита Соджу",
+    "rank": "C",
+    "wanters_count": 6,
+    "timestamp": 1768335205.836855,
+    "cached_at": "2026-01-13T22:13:25.836856",
+    "instance_id": 57847671
+  },
+  "34074": {
+    "card_id": 34074,
+    "name": "Кери",
+    "rank": "C",
+    "wanters_count": 27,
+    "timestamp": 1768335206.7223604,
+    "cached_at": "2026-01-13T22:13:26.722361",
+    "instance_id": 54041821
+  },
+  "198056": {
+    "card_id": 198056,
+    "name": "Элиот",
+    "rank": "C",
+    "wanters_count": 38,
+    "timestamp": 1768335208.283993,
+    "cached_at": "2026-01-13T22:13:28.283994",
+    "instance_id": 337939622
+  },
+  "77695": {
+    "card_id": 77695,
+    "name": "Ди и Юмэко",
+    "rank": "C",
+    "wanters_count": 8,
+    "timestamp": 1768335211.8457174,
+    "cached_at": "2026-01-13T22:13:31.845718",
+    "instance_id": 47734788
+  },
+  "59818": {
+    "card_id": 59818,
+    "name": "Джона и Ëхан",
+    "rank": "C",
+    "wanters_count": 198,
+    "timestamp": 1768335214.1009467,
+    "cached_at": "2026-01-13T22:13:34.100947",
+    "instance_id": 396989182
+  },
+  "157181": {
+    "card_id": 157181,
+    "name": "Му Шэн и Лин Мяомяо",
+    "rank": "C",
+    "wanters_count": 33,
+    "timestamp": 1768335215.9516847,
+    "cached_at": "2026-01-13T22:13:35.951685",
+    "instance_id": 174194577
+  },
+  "76324": {
+    "card_id": 76324,
+    "name": "Гу Доюн",
+    "rank": "C",
+    "wanters_count": 48,
+    "timestamp": 1768335217.3491092,
+    "cached_at": "2026-01-13T22:13:37.349110",
+    "instance_id": 154187045
+  },
+  "18051": {
+    "card_id": 18051,
+    "name": "Е Юнь",
+    "rank": "C",
+    "wanters_count": 0,
+    "timestamp": 1768335217.9353807,
+    "cached_at": "2026-01-13T22:13:37.935381",
+    "instance_id": 70763528
+  },
+  "18645": {
+    "card_id": 18645,
+    "name": "Хильда",
+    "rank": "C",
+    "wanters_count": 0,
+    "timestamp": 1768335219.6416104,
+    "cached_at": "2026-01-13T22:13:39.641611",
+    "instance_id": 392912482
+  },
+  "37274": {
+    "card_id": 37274,
+    "name": "Айнц",
+    "rank": "C",
+    "wanters_count": 12,
+    "timestamp": 1768335228.5814168,
+    "cached_at": "2026-01-13T22:13:48.581417",
+    "instance_id": 39301152
+  },
+  "104657": {
+    "card_id": 104657,
+    "name": "Оливия и Рише",
+    "rank": "C",
+    "wanters_count": 11,
+    "timestamp": 1768335229.0848773,
+    "cached_at": "2026-01-13T22:13:49.084878",
+    "instance_id": 62793678
+  },
+  "60388": {
+    "card_id": 60388,
+    "name": "Фабрицио",
+    "rank": "C",
+    "wanters_count": 92,
+    "timestamp": 1768335234.6554961,
+    "cached_at": "2026-01-13T22:13:54.655497",
+    "instance_id": 381124500
+  },
+  "15186": {
+    "card_id": 15186,
+    "name": "За Ён и Мэ Хва",
+    "rank": "C",
+    "wanters_count": 17,
+    "timestamp": 1768335235.1995964,
+    "cached_at": "2026-01-13T22:13:55.199597",
+    "instance_id": 389414124
+  },
+  "45179": {
+    "card_id": 45179,
+    "name": "Чжок Чон Ган",
+    "rank": "C",
+    "wanters_count": 95,
+    "timestamp": 1768335238.3988392,
+    "cached_at": "2026-01-13T22:13:58.398840",
+    "instance_id": 179296824
+  },
+  "100634": {
+    "card_id": 100634,
+    "name": "Танака",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335240.0401022,
+    "cached_at": "2026-01-13T22:14:00.040104",
+    "instance_id": 70046568
+  },
+  "67733": {
+    "card_id": 67733,
+    "name": "Юи Касии",
+    "rank": "C",
+    "wanters_count": 30,
+    "timestamp": 1768335242.960529,
+    "cached_at": "2026-01-13T22:14:02.960530",
+    "instance_id": 34683744
+  },
+  "10187": {
+    "card_id": 10187,
+    "name": "Джемина",
+    "rank": "C",
+    "wanters_count": 270,
+    "timestamp": 1768335243.71687,
+    "cached_at": "2026-01-13T22:14:03.716871",
+    "instance_id": 358020823
+  },
+  "228728": {
+    "card_id": 228728,
+    "name": "Сяо Цяо",
+    "rank": "C",
+    "wanters_count": 73,
+    "timestamp": 1768335247.7944293,
+    "cached_at": "2026-01-13T22:14:07.794430",
+    "instance_id": 263536753
+  },
+  "53219": {
+    "card_id": 53219,
+    "name": "Кракен",
+    "rank": "C",
+    "wanters_count": 8,
+    "timestamp": 1768335248.9212463,
+    "cached_at": "2026-01-13T22:14:08.921247",
+    "instance_id": 58667670
+  },
+  "243565": {
+    "card_id": 243565,
+    "name": "Первин Карлайл",
+    "rank": "C",
+    "wanters_count": 8,
+    "timestamp": 1768335249.257226,
+    "cached_at": "2026-01-13T22:14:09.257227",
+    "instance_id": 389413502
+  },
+  "85554": {
+    "card_id": 85554,
+    "name": "Элькин",
+    "rank": "C",
+    "wanters_count": 45,
+    "timestamp": 1768335249.6685672,
+    "cached_at": "2026-01-13T22:14:09.668569",
+    "instance_id": 114020368
+  },
+  "51264": {
+    "card_id": 51264,
+    "name": "Азиль",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335249.9965484,
+    "cached_at": "2026-01-13T22:14:09.996549",
+    "instance_id": 395049564
+  },
+  "260295": {
+    "card_id": 260295,
+    "name": "Алан",
+    "rank": "C",
+    "wanters_count": 3,
+    "timestamp": 1768335250.3325267,
+    "cached_at": "2026-01-13T22:14:10.332528",
+    "instance_id": 389414073
+  },
+  "116455": {
+    "card_id": 116455,
+    "name": "Хотаро и Эру",
+    "rank": "C",
+    "wanters_count": 50,
+    "timestamp": 1768335250.6976306,
+    "cached_at": "2026-01-13T22:14:10.697632",
+    "instance_id": 163974493
+  },
+  "114835": {
+    "card_id": 114835,
+    "name": "Алиса и Питер Уайт",
+    "rank": "C",
+    "wanters_count": 87,
+    "timestamp": 1768335256.4142475,
+    "cached_at": "2026-01-13T22:14:16.414248",
+    "instance_id": 387247481
+  },
+  "22017": {
+    "card_id": 22017,
+    "name": "Мин Ю",
+    "rank": "C",
+    "wanters_count": 4,
+    "timestamp": 1768335258.7981012,
+    "cached_at": "2026-01-13T22:14:18.798102",
+    "instance_id": 41784739
+  },
+  "33948": {
+    "card_id": 33948,
+    "name": "Гарроу",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335259.1408958,
+    "cached_at": "2026-01-13T22:14:19.140897",
+    "instance_id": 66426994
+  },
+  "57097": {
+    "card_id": 57097,
+    "name": "Хилинг, Боджи и Дайда",
+    "rank": "C",
+    "wanters_count": 18,
+    "timestamp": 1768335264.8644958,
+    "cached_at": "2026-01-13T22:14:24.864497",
+    "instance_id": 27168184
+  },
+  "73719": {
+    "card_id": 73719,
+    "name": "Руслан",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335266.7176974,
+    "cached_at": "2026-01-13T22:14:26.717699",
+    "instance_id": 396988336
+  },
+  "61475": {
+    "card_id": 61475,
+    "name": "Джонатан Дмитрий",
+    "rank": "C",
+    "wanters_count": 71,
+    "timestamp": 1768335269.7065554,
+    "cached_at": "2026-01-13T22:14:29.706556",
+    "instance_id": 99332762
+  },
+  "182929": {
+    "card_id": 182929,
+    "name": "Иветта",
+    "rank": "C",
+    "wanters_count": 16,
+    "timestamp": 1768335271.8653102,
+    "cached_at": "2026-01-13T22:14:31.865311",
+    "instance_id": 389413916
+  },
+  "88459": {
+    "card_id": 88459,
+    "name": "Силина и Карзан",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335273.172519,
+    "cached_at": "2026-01-13T22:14:33.172521",
+    "instance_id": 63843297
+  },
+  "91072": {
+    "card_id": 91072,
+    "name": "Джокер",
+    "rank": "C",
+    "wanters_count": 81,
+    "timestamp": 1768335275.6283202,
+    "cached_at": "2026-01-13T22:14:35.628322",
+    "instance_id": 46984938
+  },
+  "71267": {
+    "card_id": 71267,
+    "name": "Мачимия Эйкичи",
+    "rank": "C",
+    "wanters_count": 10,
+    "timestamp": 1768335276.7030866,
+    "cached_at": "2026-01-13T22:14:36.703087",
+    "instance_id": 365754564
+  },
+  "131478": {
+    "card_id": 131478,
+    "name": "Мин Лан и Мин Цзин",
+    "rank": "C",
+    "wanters_count": 4,
+    "timestamp": 1768335277.452127,
+    "cached_at": "2026-01-13T22:14:37.452128",
+    "instance_id": 395049012
+  },
+  "185558": {
+    "card_id": 185558,
+    "name": "Сону",
+    "rank": "C",
+    "wanters_count": 27,
+    "timestamp": 1768335279.0475838,
+    "cached_at": "2026-01-13T22:14:39.047585",
+    "instance_id": 392911900
+  },
+  "269301": {
+    "card_id": 269301,
+    "name": "Долорес",
+    "rank": "C",
+    "wanters_count": 59,
+    "timestamp": 1768335279.7166011,
+    "cached_at": "2026-01-13T22:14:39.716602",
+    "instance_id": 392912728
+  },
+  "12045": {
+    "card_id": 12045,
+    "name": "Сапфир и Руби",
+    "rank": "C",
+    "wanters_count": 30,
+    "timestamp": 1768335288.606665,
+    "cached_at": "2026-01-13T22:14:48.606666",
+    "instance_id": 62736887
+  },
+  "192807": {
+    "card_id": 192807,
+    "name": "Маркиза Эванс",
+    "rank": "C",
+    "wanters_count": 14,
+    "timestamp": 1768335288.9939094,
+    "cached_at": "2026-01-13T22:14:48.993910",
+    "instance_id": 396988145
+  },
+  "43072": {
+    "card_id": 43072,
+    "name": "Клейман",
+    "rank": "C",
+    "wanters_count": 450,
+    "timestamp": 1768335292.9176471,
+    "cached_at": "2026-01-13T22:14:52.917648",
+    "instance_id": 379574079
+  },
+  "192175": {
+    "card_id": 192175,
+    "name": "Алисия",
+    "rank": "C",
+    "wanters_count": 97,
+    "timestamp": 1768335296.6530056,
+    "cached_at": "2026-01-13T22:14:56.653007",
+    "instance_id": 196515096
+  },
+  "200944": {
+    "card_id": 200944,
+    "name": "Сяо Юсянь",
+    "rank": "C",
+    "wanters_count": 3,
+    "timestamp": 1768335297.7982988,
+    "cached_at": "2026-01-13T22:14:57.798300",
+    "instance_id": 392912243
+  },
+  "177082": {
+    "card_id": 177082,
+    "name": "Яэ Амагами",
+    "rank": "C",
+    "wanters_count": 14,
+    "timestamp": 1768335299.024056,
+    "cached_at": "2026-01-13T22:14:59.024057",
+    "instance_id": 384533938
+  },
+  "219080": {
+    "card_id": 219080,
+    "name": "Дувон",
+    "rank": "C",
+    "wanters_count": 30,
+    "timestamp": 1768335300.542123,
+    "cached_at": "2026-01-13T22:15:00.542124",
+    "instance_id": 389413917
+  },
+  "43458": {
+    "card_id": 43458,
+    "name": "Соломон",
+    "rank": "C",
+    "wanters_count": 129,
+    "timestamp": 1768335302.113982,
+    "cached_at": "2026-01-13T22:15:02.113983",
+    "instance_id": 70980085
+  },
+  "173724": {
+    "card_id": 173724,
+    "name": "Папа и Дочь",
+    "rank": "C",
+    "wanters_count": 19,
+    "timestamp": 1768335302.47532,
+    "cached_at": "2026-01-13T22:15:02.475321",
+    "instance_id": 296735036
+  },
+  "228885": {
+    "card_id": 228885,
+    "name": "Линь",
+    "rank": "C",
+    "wanters_count": 119,
+    "timestamp": 1768335305.0827973,
+    "cached_at": "2026-01-13T22:15:05.082798",
+    "instance_id": 388403439
+  },
+  "21020": {
+    "card_id": 21020,
+    "name": "Кан Со Ын",
+    "rank": "C",
+    "wanters_count": 60,
+    "timestamp": 1768335306.424123,
+    "cached_at": "2026-01-13T22:15:06.424124",
+    "instance_id": 52718705
+  },
+  "93373": {
+    "card_id": 93373,
+    "name": "Сяо Миэр",
+    "rank": "C",
+    "wanters_count": 51,
+    "timestamp": 1768335307.6073604,
+    "cached_at": "2026-01-13T22:15:07.607362",
+    "instance_id": 389414123
+  },
+  "271880": {
+    "card_id": 271880,
+    "name": "Эванджелин и Рубеллиан",
+    "rank": "C",
+    "wanters_count": 47,
+    "timestamp": 1768335309.2925143,
+    "cached_at": "2026-01-13T22:15:09.292516",
+    "instance_id": 366249169
+  },
+  "199438": {
+    "card_id": 199438,
+    "name": "Надиа",
+    "rank": "C",
+    "wanters_count": 29,
+    "timestamp": 1768335310.037791,
+    "cached_at": "2026-01-13T22:15:10.037792",
+    "instance_id": 396988144
+  },
+  "183011": {
+    "card_id": 183011,
+    "name": "Ариэль",
+    "rank": "C",
+    "wanters_count": 78,
+    "timestamp": 1768335313.3223913,
+    "cached_at": "2026-01-13T22:15:13.322392",
+    "instance_id": 392912597
+  },
+  "199398": {
+    "card_id": 199398,
+    "name": "Вионна Осса Эллиант",
+    "rank": "C",
+    "wanters_count": 66,
+    "timestamp": 1768335318.799093,
+    "cached_at": "2026-01-13T22:15:18.799093",
+    "instance_id": 387247013
+  },
+  "151139": {
+    "card_id": 151139,
+    "name": "Луцио",
+    "rank": "C",
+    "wanters_count": 2,
+    "timestamp": 1768335319.196464,
+    "cached_at": "2026-01-13T22:15:19.196465",
+    "instance_id": 397093338
+  },
+  "62585": {
+    "card_id": 62585,
+    "name": "Король большеухих кроликов",
+    "rank": "C",
+    "wanters_count": 1,
+    "timestamp": 1768335320.9193645,
+    "cached_at": "2026-01-13T22:15:20.919365",
+    "instance_id": 377478786
+  },
+  "263069": {
+    "card_id": 263069,
+    "name": "Рю Хан Бин",
+    "rank": "C",
+    "wanters_count": 70,
+    "timestamp": 1768335323.1982272,
+    "cached_at": "2026-01-13T22:15:23.198228",
+    "instance_id": 396988946
+  },
+  "229542": {
+    "card_id": 229542,
+    "name": "Ми Юэ",
+    "rank": "C",
+    "wanters_count": 71,
+    "timestamp": 1768335326.6933799,
+    "cached_at": "2026-01-13T22:15:26.693381",
+    "instance_id": 311593783
+  },
+  "208278": {
+    "card_id": 208278,
+    "name": "Шан Янь|Ли Цяо",
+    "rank": "C",
+    "wanters_count": 34,
+    "timestamp": 1768335327.9626508,
+    "cached_at": "2026-01-13T22:15:27.962652",
+    "instance_id": 395048880
+  },
+  "148626": {
+    "card_id": 148626,
+    "name": "Драгона",
+    "rank": "C",
+    "wanters_count": 39,
+    "timestamp": 1768335332.4390442,
+    "cached_at": "2026-01-13T22:15:32.439045",
+    "instance_id": 345071048
+  },
+  "83030": {
+    "card_id": 83030,
+    "name": "Пак Чимин",
+    "rank": "C",
+    "wanters_count": 390,
+    "timestamp": 1768335332.9493482,
+    "cached_at": "2026-01-13T22:15:32.949349",
+    "instance_id": 232251480
+  },
+  "60177": {
+    "card_id": 60177,
+    "name": "Дирод Артиан",
+    "rank": "C",
+    "wanters_count": 46,
+    "timestamp": 1768335334.7546065,
+    "cached_at": "2026-01-13T22:15:34.754608",
+    "instance_id": 175925879
+  },
+  "50697": {
+    "card_id": 50697,
+    "name": "Ганон и Маянтрея",
+    "rank": "C",
+    "wanters_count": 31,
+    "timestamp": 1768335336.0400956,
+    "cached_at": "2026-01-13T22:15:36.040096",
+    "instance_id": 66349003
+  },
+  "49315": {
+    "card_id": 49315,
+    "name": "Ляпис и Рорен",
+    "rank": "C",
+    "wanters_count": 3,
+    "timestamp": 1768335337.5633345,
+    "cached_at": "2026-01-13T22:15:37.563335",
+    "instance_id": 57462605
+  },
+  "52193": {
+    "card_id": 52193,
+    "name": "Лари и Кай",
+    "rank": "C",
+    "wanters_count": 192,
+    "timestamp": 1768335340.2673173,
+    "cached_at": "2026-01-13T22:15:40.267318",
+    "instance_id": 396988281
+  },
+  "138408": {
+    "card_id": 138408,
+    "name": "Роман Дмитрий",
+    "rank": "C",
+    "wanters_count": 78,
+    "timestamp": 1768335342.2598684,
+    "cached_at": "2026-01-13T22:15:42.259869",
+    "instance_id": 181537780
+  },
+  "286186": {
+    "card_id": 286186,
+    "name": "Аврозия",
+    "rank": "C",
+    "wanters_count": 60,
+    "timestamp": 1768335348.630121,
+    "cached_at": "2026-01-13T22:15:48.630121",
+    "instance_id": 306568276
+  },
+  "23902": {
+    "card_id": 23902,
+    "name": "Синий волк",
+    "rank": "C",
+    "wanters_count": 11,
+    "timestamp": 1768335348.971614,
+    "cached_at": "2026-01-13T22:15:48.971614",
+    "instance_id": 396989228
+  },
+  "37745": {
+    "card_id": 37745,
+    "name": "Леон и Бенджамин",
+    "rank": "C",
+    "wanters_count": 6,
+    "timestamp": 1768335352.892659,
+    "cached_at": "2026-01-13T22:15:52.892660",
+    "instance_id": 71008810
+  },
+  "182212": {
+    "card_id": 182212,
+    "name": "Рольфи",
+    "rank": "C",
+    "wanters_count": 59,
+    "timestamp": 1768335355.154687,
+    "cached_at": "2026-01-13T22:15:55.154688",
+    "instance_id": 382749316
+  },
+  "237473": {
+    "card_id": 237473,
+    "name": "Байе",
+    "rank": "C",
+    "wanters_count": 21,
+    "timestamp": 1768335356.350096,
+    "cached_at": "2026-01-13T22:15:56.350097",
+    "instance_id": 392912881
+  },
+  "130849": {
+    "card_id": 130849,
+    "name": "Но Сок Де",
+    "rank": "C",
+    "wanters_count": 51,
+    "timestamp": 1768335357.7999275,
+    "cached_at": "2026-01-13T22:15:57.799928",
+    "instance_id": 335812822
+  },
+  "71262": {
+    "card_id": 71262,
+    "name": "Грейс и Иан",
+    "rank": "C",
+    "wanters_count": 72,
+    "timestamp": 1768335362.532704,
+    "cached_at": "2026-01-13T22:16:02.532705",
+    "instance_id": 214976870
+  },
+  "5094": {
+    "card_id": 5094,
+    "name": "Крид",
+    "rank": "C",
+    "wanters_count": 48,
+    "timestamp": 1768335363.5742955,
+    "cached_at": "2026-01-13T22:16:03.574297",
+    "instance_id": 38524250
+  },
+  "136135": {
+    "card_id": 136135,
+    "name": "Адель | Вельвет",
+    "rank": "C",
+    "wanters_count": 44,
+    "timestamp": 1768335365.297405,
+    "cached_at": "2026-01-13T22:16:05.297406",
+    "instance_id": 316544780
+  },
+  "233913": {
+    "card_id": 233913,
+    "name": "Кларисса",
+    "rank": "C",
+    "wanters_count": 56,
+    "timestamp": 1768335365.7710807,
+    "cached_at": "2026-01-13T22:16:05.771082",
+    "instance_id": 332153132
+  },
+  "66191": {
+    "card_id": 66191,
+    "name": "Лен и Рин",
+    "rank": "C",
+    "wanters_count": 62,
+    "timestamp": 1768335368.030195,
+    "cached_at": "2026-01-13T22:16:08.030199",
+    "instance_id": 34567117
+  }
+}

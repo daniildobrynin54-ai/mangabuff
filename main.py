@@ -10,7 +10,11 @@ from config import (
     OUTPUT_DIR,
     BOOST_CARD_FILE,
     WAIT_AFTER_ALL_OWNERS,
-    WAIT_CHECK_INTERVAL
+    WAIT_CHECK_INTERVAL,
+    TELEGRAM_ENABLED,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    TELEGRAM_THREAD_ID
 )
 from auth import login
 from inventory import get_user_inventory, InventoryManager
@@ -27,6 +31,7 @@ from card_replacement import check_and_replace_if_needed
 from daily_stats import create_stats_manager
 from proxy_manager import create_proxy_manager
 from rate_limiter import get_rate_limiter
+from telegram_notifier import create_telegram_notifier  # 🔧 ДОБАВЛЕНО
 from utils import (
     ensure_dir_exists,
     save_json,
@@ -54,6 +59,7 @@ class MangaBuffApp:
         self.processor = None
         self.proxy_manager = None
         self.rate_limiter = get_rate_limiter()
+        self.telegram_notifier = None  # 🔧 ДОБАВЛЕНО
     
     def setup(self) -> bool:
         """Настройка приложения."""
@@ -63,6 +69,14 @@ class MangaBuffApp:
         self.proxy_manager = create_proxy_manager(
             proxy_url=self.args.proxy,
             proxy_file=self.args.proxy_file
+        )
+        
+        # 🔧 ДОБАВЛЕНО: Инициализируем Telegram бота
+        self.telegram_notifier = create_telegram_notifier(
+            bot_token=self.args.telegram_token or TELEGRAM_BOT_TOKEN,
+            chat_id=self.args.telegram_chat_id or TELEGRAM_CHAT_ID,
+            thread_id=self.args.telegram_thread_id or TELEGRAM_THREAD_ID,
+            enabled=self.args.telegram_enabled if hasattr(self.args, 'telegram_enabled') else TELEGRAM_ENABLED
         )
         
         # Выводим информацию о rate limiting
@@ -152,6 +166,20 @@ class MangaBuffApp:
         print_success("Карточка для вклада:")
         print(f"   {format_card_info(boost_card)}")
         
+        # 🔧 ДОБАВЛЕНО: Отправляем уведомление о первой карте
+        if self.telegram_notifier and self.telegram_notifier.is_enabled():
+            print("\n📱 Отправка уведомления о текущей карте в Telegram...")
+            club_members = boost_card.get('club_members', [])
+            success = self.telegram_notifier.notify_card_change(
+                card_info=boost_card,
+                boost_url=self.args.boost_url,
+                club_members=club_members
+            )
+            if success:
+                print_success("Уведомление отправлено в Telegram")
+            else:
+                print_warning("Не удалось отправить уведомление")
+        
         if boost_card.get('needs_replacement', False):
             print_warning(f"\n⚠️  Карта требует замены!")
             
@@ -175,11 +203,13 @@ class MangaBuffApp:
         if not self.args.enable_monitor:
             return
         
+        # 🔧 ИСПРАВЛЕНО: Передаем telegram_notifier в монитор
         self.monitor = start_boost_monitor(
             self.session,
             self.args.boost_url,
             self.stats_manager,
-            self.output_dir
+            self.output_dir,
+            self.telegram_notifier  # 🔧 ДОБАВЛЕНО
         )
         
         self.monitor.current_card_id = boost_card['card_id']
@@ -398,6 +428,32 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="Файл с прокси (первая строка)"
     )
     
+    # 🔧 ДОБАВЛЕНО: Параметры Telegram
+    parser.add_argument(
+        "--telegram_token",
+        help="Telegram Bot Token (по умолчанию из config.py)"
+    )
+    parser.add_argument(
+        "--telegram_chat_id",
+        help="Telegram Chat ID (по умолчанию из config.py)"
+    )
+    parser.add_argument(
+        "--telegram_thread_id",
+        type=int,
+        help="Telegram Thread ID для топиков (опционально)"
+    )
+    parser.add_argument(
+        "--telegram_enabled",
+        action="store_true",
+        default=None,
+        help="Включить Telegram уведомления"
+    )
+    parser.add_argument(
+        "--telegram_disabled",
+        action="store_true",
+        help="Отключить Telegram уведомления"
+    )
+    
     # Режимы работы
     parser.add_argument(
         "--skip_inventory",
@@ -436,6 +492,12 @@ def main():
     # Можно задать прокси через переменную окружения
     if not args.proxy and not args.proxy_file:
         args.proxy = os.getenv('PROXY_URL')
+    
+    # 🔧 ДОБАВЛЕНО: Обработка флагов Telegram
+    if args.telegram_disabled:
+        args.telegram_enabled = False
+    elif args.telegram_enabled is None:
+        args.telegram_enabled = TELEGRAM_ENABLED
     
     app = MangaBuffApp(args)
     sys.exit(app.run())
